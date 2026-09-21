@@ -28,6 +28,14 @@ public partial class MainViewModel : ObservableObject
     public IRelayCommand LaunchSelectedCommand { get; }
     public IAsyncRelayCommand DeleteSelectedCommand { get; }
 
+    public string[] GameFilterOptions { get; } = { "(All)", "Thief1", "Thief2" };
+
+    public string GameFilterDisplay
+    {
+        get => GameFilter?.ToString() ?? "(All)";
+        set => GameFilter = value == "(All)" ? null : Enum.Parse<GameTitle>(value);
+    }
+
     [ObservableProperty]
     private GameTitle? gameFilter;
 
@@ -49,7 +57,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? launchError;
 
-    partial void OnGameFilterChanged(GameTitle? value) => ApplyQuery();
+    partial void OnGameFilterChanged(GameTitle? value)
+    {
+        OnPropertyChanged(nameof(GameFilterDisplay));
+        ApplyQuery();
+    }
     partial void OnStatusFilterChanged(MissionStatus? value) => ApplyQuery();
     partial void OnTagFilterChanged(string? value) => ApplyQuery();
     partial void OnSortFieldChanged(SortField value) => ApplyQuery();

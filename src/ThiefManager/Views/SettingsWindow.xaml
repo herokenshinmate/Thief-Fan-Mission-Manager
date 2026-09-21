@@ -1,0 +1,16 @@
+<Window x:Class="ThiefManager.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="260" Width="500">
+    <StackPanel Margin="12">
+        <TextBlock Text="Thief 1 FM Folder"/>
+        <TextBox Text="{Binding Thief1FmFolder}" Margin="0,0,0,8"/>
+        <TextBlock Text="Thief 1 Executable"/>
+        <TextBox Text="{Binding Thief1ExePath}" Margin="0,0,0,8"/>
+        <TextBlock Text="Thief 2 FM Folder"/>
+        <TextBox Text="{Binding Thief2FmFolder}" Margin="0,0,0,8"/>
+        <TextBlock Text="Thief 2 Executable"/>
+        <TextBox Text="{Binding Thief2ExePath}" Margin="0,0,0,8"/>
+        <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right"/>
+    </StackPanel>
+</Window>
