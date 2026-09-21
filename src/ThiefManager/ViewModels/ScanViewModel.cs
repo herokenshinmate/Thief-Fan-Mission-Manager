@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ThiefManager.Data;
@@ -23,11 +24,26 @@ public partial class ScanViewModel : ObservableObject
     public ObservableCollection<ScanCandidateViewModel> Candidates { get; } = new();
     public IAsyncRelayCommand ImportSelectedCommand { get; }
 
+    [ObservableProperty] private string? scanError;
+
     public async Task Scan(GameTitle game, string fmFolder)
     {
+        ScanError = null;
         _lastScannedGame = game;
         var existing = await _missionRepository.GetAllAsync();
-        var subfolders = _directoryReader.GetSubdirectories(fmFolder);
+
+        IReadOnlyList<string> subfolders;
+        try
+        {
+            subfolders = _directoryReader.GetSubdirectories(fmFolder);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            ScanError = $"Could not read folder: {fmFolder}";
+            Candidates.Clear();
+            return;
+        }
+
         var newCandidates = ScanService.FindNewCandidates(subfolders, existing.Select(m => m.FolderPath));
 
         Candidates.Clear();

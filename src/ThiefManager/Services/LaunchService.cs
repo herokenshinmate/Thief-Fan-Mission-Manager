@@ -16,7 +16,15 @@ public class LaunchService
         if (string.IsNullOrWhiteSpace(exePath) || !_fileExistsChecker.Exists(exePath))
             return LaunchResult.Failure("No valid executable is configured for this game. Set it in Settings.");
 
-        _launcher.Start(exePath);
+        try
+        {
+            _launcher.Start(exePath);
+        }
+        catch (Exception ex)
+        {
+            return LaunchResult.Failure($"Failed to launch: {ex.Message}");
+        }
+
         return LaunchResult.Success();
     }
 }
