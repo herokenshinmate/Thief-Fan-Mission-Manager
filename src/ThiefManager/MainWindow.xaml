@@ -37,26 +37,17 @@
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"/>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="3*"/>
-            </Grid.ColumnDefinitions>
-
-            <ListView Grid.Column="0" ItemsSource="{Binding VisibleMissions}"
-                      SelectedItem="{Binding SelectedMission}"
-                      MouseDoubleClick="MissionList_DoubleClick">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
-                        <GridViewColumn Header="Game" DisplayMemberBinding="{Binding Game}" Width="80"/>
-                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100"/>
-                        <GridViewColumn Header="Rating" DisplayMemberBinding="{Binding Rating}" Width="60"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-
-            <ContentControl Grid.Column="1" x:Name="EditPanelHost" Margin="8,0,0,0"/>
-        </Grid>
+        <ListView ItemsSource="{Binding VisibleMissions}"
+                  SelectedItem="{Binding SelectedMission}"
+                  MouseDoubleClick="MissionList_DoubleClick">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
+                    <GridViewColumn Header="Game" DisplayMemberBinding="{Binding Game}" Width="80"/>
+                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100"/>
+                    <GridViewColumn Header="Rating" DisplayMemberBinding="{Binding Rating}" Width="60"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </DockPanel>
 </Window>

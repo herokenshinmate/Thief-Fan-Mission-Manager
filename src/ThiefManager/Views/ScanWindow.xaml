@@ -3,13 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Scan for New Missions" Height="400" Width="500">
     <DockPanel Margin="12">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"/>
+            <Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"/>
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ScanError}" Foreground="Red" Margin="0,0,0,8"/>
+
         <Button DockPanel.Dock="Bottom" Content="Import Selected" Command="{Binding ImportSelectedCommand}" HorizontalAlignment="Right" Margin="0,8,0,0"/>
         <ListView ItemsSource="{Binding Candidates}">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding IsSelected}" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding SuggestedTitle}"/>
+                        <TextBox Text="{Binding SuggestedTitle}" Width="300"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

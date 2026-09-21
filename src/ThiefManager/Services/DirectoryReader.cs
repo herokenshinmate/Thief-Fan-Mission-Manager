@@ -4,6 +4,11 @@ namespace ThiefManager.Services;
 
 public class DirectoryReader : IDirectoryReader
 {
-    public IReadOnlyList<string> GetSubdirectories(string path) =>
-        Directory.Exists(path) ? Directory.GetDirectories(path) : Array.Empty<string>();
+    public IReadOnlyList<string> GetSubdirectories(string path)
+    {
+        if (!Directory.Exists(path))
+            return Array.Empty<string>();
+
+        return Directory.GetDirectories(path);
+    }
 }
