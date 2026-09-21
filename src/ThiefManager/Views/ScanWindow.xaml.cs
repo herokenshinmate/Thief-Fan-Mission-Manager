@@ -1,10 +1,11 @@
 using System.Windows;
 using ThiefManager.Models;
 using ThiefManager.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace ThiefManager.Views;
 
-public partial class ScanWindow : Window
+public partial class ScanWindow : FluentWindow
 {
     private readonly ScanViewModel _viewModel;
     private readonly AppSettings _settings;

@@ -5,10 +5,11 @@ using System.Windows.Media;
 using ThiefManager.Data;
 using ThiefManager.ViewModels;
 using ThiefManager.Views;
+using Wpf.Ui.Controls;
 
 namespace ThiefManager;
 
-public partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
     private readonly MainViewModel _viewModel;
     private readonly IMissionRepository _missionRepository;
@@ -69,7 +70,7 @@ public partial class MainWindow : Window
 
     private void MissionList_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource is DependencyObject source && FindAncestor<ListViewItem>(source) is { } item)
+        if (e.OriginalSource is DependencyObject source && FindAncestor<System.Windows.Controls.ListViewItem>(source) is { } item)
             item.IsSelected = true;
     }
 

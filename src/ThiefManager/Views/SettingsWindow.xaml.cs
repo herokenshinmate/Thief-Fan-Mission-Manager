@@ -1,10 +1,11 @@
 using System.Windows;
 using Microsoft.Win32;
 using ThiefManager.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace ThiefManager.Views;
 
-public partial class SettingsWindow : Window
+public partial class SettingsWindow : FluentWindow
 {
     private readonly SettingsViewModel _viewModel;
 

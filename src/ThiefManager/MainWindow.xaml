@@ -1,13 +1,23 @@
-<Window x:Class="ThiefManager.MainWindow"
+<ui:FluentWindow x:Class="ThiefManager.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThiefManager"
         xmlns:models="clr-namespace:ThiefManager.Models"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Thief Fan Mission Manager" Height="600" Width="1100">
-    <DockPanel Margin="8">
+        Title="Thief Fan Mission Manager" Height="600" Width="1100"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="Thief Fan Mission Manager"/>
+
+        <DockPanel Grid.Row="1" Margin="12,4,12,12">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Settings..." Click="OpenSettings_Click"/>
@@ -64,5 +74,6 @@
                 </GridView>
             </ListView.View>
         </ListView>
-    </DockPanel>
-</Window>
+        </DockPanel>
+    </Grid>
+</ui:FluentWindow>
