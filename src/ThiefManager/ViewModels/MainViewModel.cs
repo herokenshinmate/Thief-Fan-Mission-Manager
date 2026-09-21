@@ -20,6 +20,7 @@ public partial class MainViewModel : ObservableObject
         LoadCommand = new AsyncRelayCommand(LoadAsync);
         LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null);
         DeleteSelectedCommand = new AsyncRelayCommand(DeleteSelectedAsync, () => SelectedMission is not null);
+        SetSelectedStatusCommand = new AsyncRelayCommand<MissionStatus>(SetSelectedStatusAsync, _ => SelectedMission is not null);
     }
 
     public ObservableCollection<FanMission> VisibleMissions { get; } = new();
@@ -27,6 +28,7 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand LoadCommand { get; }
     public IRelayCommand LaunchSelectedCommand { get; }
     public IAsyncRelayCommand DeleteSelectedCommand { get; }
+    public IAsyncRelayCommand<MissionStatus> SetSelectedStatusCommand { get; }
 
     public string[] GameFilterOptions { get; } = { "(All)", "Thief1", "Thief2" };
 
@@ -95,6 +97,7 @@ public partial class MainViewModel : ObservableObject
     {
         LaunchSelectedCommand.NotifyCanExecuteChanged();
         DeleteSelectedCommand.NotifyCanExecuteChanged();
+        SetSelectedStatusCommand.NotifyCanExecuteChanged();
     }
 
     private async Task LoadAsync()
@@ -138,6 +141,16 @@ public partial class MainViewModel : ObservableObject
         await _missionRepository.DeleteAsync(SelectedMission.Id);
         _allMissions.RemoveAll(m => m.Id == SelectedMission.Id);
         SelectedMission = null;
+        ApplyQuery();
+    }
+
+    private async Task SetSelectedStatusAsync(MissionStatus status)
+    {
+        if (SelectedMission is null)
+            return;
+
+        SelectedMission.Status = status;
+        await _missionRepository.UpdateAsync(SelectedMission);
         ApplyQuery();
     }
 }

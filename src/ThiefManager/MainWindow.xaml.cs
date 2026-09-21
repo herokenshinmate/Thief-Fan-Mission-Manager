@@ -1,5 +1,7 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using ThiefManager.Data;
 using ThiefManager.ViewModels;
 using ThiefManager.Views;
@@ -43,7 +45,13 @@ public partial class MainWindow : Window
         editWindow.ShowDialog();
     }
 
-    private void MissionList_DoubleClick(object sender, MouseButtonEventArgs e)
+    private void MissionList_DoubleClick(object sender, MouseButtonEventArgs e) =>
+        OpenPropertiesForSelectedMission();
+
+    private void MissionProperties_Click(object sender, RoutedEventArgs e) =>
+        OpenPropertiesForSelectedMission();
+
+    private void OpenPropertiesForSelectedMission()
     {
         if (_viewModel.SelectedMission is null)
             return;
@@ -57,6 +65,23 @@ public partial class MainWindow : Window
             await _viewModel.LoadCommand.ExecuteAsync(null);
         };
         editWindow.ShowDialog();
+    }
+
+    private void MissionList_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && FindAncestor<ListViewItem>(source) is { } item)
+            item.IsSelected = true;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return null;
     }
 
     private async void OpenSettings_Click(object sender, RoutedEventArgs e)
