@@ -166,12 +166,61 @@
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
     </Style>
 
+    <!-- MenuItem's built-in Aero2 chrome ignores plain Background/Foreground setters
+         for its highlighted state (it falls back to the system highlight color), so
+         both roles used by this app (top-level "File" header, and its leaf items)
+         get a real ControlTemplate instead. -->
+    <ControlTemplate x:Key="TopLevelMenuHeaderTemplate" TargetType="MenuItem">
+        <Border x:Name="Border" Background="{TemplateBinding Background}">
+            <Grid>
+                <ContentPresenter ContentSource="Header"
+                                  Margin="8,4"
+                                  RecognizesAccessKey="True"
+                                  VerticalAlignment="Center"/>
+                <Popup x:Name="Popup"
+                       Placement="Bottom"
+                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                       AllowsTransparency="True"
+                       Focusable="False"
+                       PopupAnimation="Fade">
+                    <Border Background="{StaticResource PanelBackgroundBrush}"
+                            BorderBrush="{StaticResource ControlBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="2">
+                        <StackPanel IsItemsHost="True"/>
+                    </Border>
+                </Popup>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Border" Property="Background" Value="{StaticResource SelectionBrush}"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="SubmenuMenuItemTemplate" TargetType="MenuItem">
+        <Border x:Name="Border" Background="{TemplateBinding Background}">
+            <ContentPresenter ContentSource="Header"
+                              Margin="24,6,24,6"
+                              RecognizesAccessKey="True"
+                              VerticalAlignment="Center"/>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Border" Property="Background" Value="{StaticResource SelectionBrush}"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
     <Style TargetType="MenuItem">
         <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="Template" Value="{StaticResource SubmenuMenuItemTemplate}"/>
         <Style.Triggers>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter Property="Background" Value="{StaticResource SelectionBrush}"/>
+            <Trigger Property="Role" Value="TopLevelHeader">
+                <Setter Property="Template" Value="{StaticResource TopLevelMenuHeaderTemplate}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -219,17 +268,34 @@
         <Setter Property="BorderBrush" Value="{StaticResource ControlBorderBrush}"/>
     </Style>
 
+    <!-- Same issue as MenuItem: ListViewItem's built-in Aero2 chrome ignores plain
+         Background setters for its selected/hover states, so it gets a real
+         ControlTemplate that renders the GridView columns itself. -->
     <Style TargetType="ListViewItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
-            </Trigger>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource SelectionBrush}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListViewItem">
+                    <Border x:Name="ItemBorder"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                              Columns="{TemplateBinding GridView.ColumnCollection}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SelectionBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="ToolTip">
