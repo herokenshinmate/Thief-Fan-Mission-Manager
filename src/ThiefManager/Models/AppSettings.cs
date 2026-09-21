@@ -1,0 +1,10 @@
+namespace ThiefManager.Models;
+
+public class AppSettings
+{
+    public int Id { get; set; }
+    public string? Thief1FmFolder { get; set; }
+    public string? Thief2FmFolder { get; set; }
+    public string? Thief1ExePath { get; set; }
+    public string? Thief2ExePath { get; set; }
+}
