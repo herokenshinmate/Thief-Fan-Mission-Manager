@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ThiefManager"
         xmlns:models="clr-namespace:ThiefManager.Models"
         mc:Ignorable="d"
-        Title="Thief Fan Mission Manager" Height="600" Width="1000">
+        Title="Thief Fan Mission Manager" Height="600" Width="1100">
     <DockPanel Margin="8">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
@@ -17,7 +17,7 @@
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,8">
             <TextBlock Text="Game:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="100" Margin="0,0,12,0"
+            <ComboBox Width="200" Margin="0,0,12,0"
                       ItemsSource="{Binding GameFilterOptions}"
                       SelectedItem="{Binding GameFilterDisplay}"/>
             <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -58,7 +58,7 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
-                    <GridViewColumn Header="Game" DisplayMemberBinding="{Binding Game}" Width="80"/>
+                    <GridViewColumn Header="Game" DisplayMemberBinding="{Binding Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" Width="200"/>
                     <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100"/>
                     <GridViewColumn Header="Rating" DisplayMemberBinding="{Binding Rating}" Width="60"/>
                 </GridView>

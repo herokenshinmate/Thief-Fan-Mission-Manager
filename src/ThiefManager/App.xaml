@@ -1,12 +1,14 @@
 ﻿<Application x:Class="ThiefManager.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:ThiefManager.Converters"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <converters:GameTitleToDisplayNameConverter x:Key="GameTitleToDisplayNameConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
