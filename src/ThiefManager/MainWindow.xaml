@@ -7,7 +7,8 @@
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Thief Fan Mission Manager" Height="600" Width="1100"
+        Title="Thief FM Manager" Height="600" Width="1100"
+        Icon="pack://application:,,,/Assets/AppIcon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
     <Grid>
         <Grid.RowDefinitions>
@@ -15,7 +16,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Thief Fan Mission Manager"/>
+        <ui:TitleBar Grid.Row="0" Title="Thief FM Manager"/>
 
         <DockPanel Grid.Row="1" Margin="12,4,12,12">
         <Menu DockPanel.Dock="Top">
