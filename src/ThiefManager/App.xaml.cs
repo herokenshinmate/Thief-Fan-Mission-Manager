@@ -50,6 +50,8 @@ public partial class App : Application
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
         var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader);
+        MainWindow = mainWindow;
+        ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();
     }
 }
