@@ -79,4 +79,28 @@ public class MainViewModelTests
         Assert.Empty(vm.VisibleMissions);
         Assert.Empty(await repo.GetAllAsync());
     }
+
+    [Fact]
+    public async Task SetSelectedStatusCommand_UpdatesStatusInRepositoryAndVisibleMissions()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1" });
+        var vm = new MainViewModel(repo, MakeLaunchService(true));
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.SetSelectedStatusCommand.ExecuteAsync(MissionStatus.Completed);
+
+        Assert.Equal(MissionStatus.Completed, vm.VisibleMissions.Single().Status);
+        Assert.Equal(MissionStatus.Completed, (await repo.GetAllAsync()).Single().Status);
+    }
+
+    [Fact]
+    public void SetSelectedStatusCommand_CanExecute_FalseWithoutSelection()
+    {
+        var repo = new FakeMissionRepository();
+        var vm = new MainViewModel(repo, MakeLaunchService(true));
+
+        Assert.False(vm.SetSelectedStatusCommand.CanExecute(MissionStatus.Completed));
+    }
 }

@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThiefManager"
+        xmlns:models="clr-namespace:ThiefManager.Models"
         mc:Ignorable="d"
         Title="Thief Fan Mission Manager" Height="600" Width="1000">
     <DockPanel Margin="8">
@@ -39,7 +40,21 @@
 
         <ListView ItemsSource="{Binding VisibleMissions}"
                   SelectedItem="{Binding SelectedMission}"
-                  MouseDoubleClick="MissionList_DoubleClick">
+                  MouseDoubleClick="MissionList_DoubleClick"
+                  MouseRightButtonUp="MissionList_MouseRightButtonUp">
+            <ListView.ContextMenu>
+                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="Properties..." Click="MissionProperties_Click"/>
+                    <MenuItem Header="Set Status">
+                        <MenuItem Header="Not Played" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.NotPlayed}"/>
+                        <MenuItem Header="In Progress" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.InProgress}"/>
+                        <MenuItem Header="Completed" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Completed}"/>
+                        <MenuItem Header="Abandoned" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Abandoned}"/>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
