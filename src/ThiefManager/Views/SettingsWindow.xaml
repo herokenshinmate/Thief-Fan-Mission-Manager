@@ -18,7 +18,11 @@
         <TextBlock Text="The folder where your Thief 1 fan missions are installed (used by loaders like FMSel/NewDarkLoader). Example: C:\Games\Thief1\FMs"
                    Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
         <DockPanel Margin="0,0,0,16">
-            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Margin="8,0,0,0" Click="BrowseThief1FmFolder_Click"/>
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief1FmFolder_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
             <TextBox Text="{Binding Thief1FmFolder}"/>
         </DockPanel>
 
@@ -26,7 +30,11 @@
         <TextBlock Text="The game (or loader) executable that launches Thief 1. Example: C:\Games\Thief1\Thief.exe"
                    Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
         <DockPanel Margin="0,0,0,16">
-            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Margin="8,0,0,0" Click="BrowseThief1ExePath_Click"/>
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief1ExePath_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
             <TextBox Text="{Binding Thief1ExePath}"/>
         </DockPanel>
 
@@ -34,7 +42,11 @@
         <TextBlock Text="The folder where your Thief 2 fan missions are installed (used by loaders like FMSel/NewDarkLoader). Example: C:\Games\Thief2\FMs"
                    Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
         <DockPanel Margin="0,0,0,16">
-            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Margin="8,0,0,0" Click="BrowseThief2FmFolder_Click"/>
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief2FmFolder_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
             <TextBox Text="{Binding Thief2FmFolder}"/>
         </DockPanel>
 
@@ -42,11 +54,19 @@
         <TextBlock Text="The game (or loader) executable that launches Thief 2. Example: C:\Games\Thief2\Thief2.exe"
                    Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
         <DockPanel Margin="0,0,0,16">
-            <Button DockPanel.Dock="Right" Content="Browse..." Width="90" Margin="8,0,0,0" Click="BrowseThief2ExePath_Click"/>
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief2ExePath_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
             <TextBox Text="{Binding Thief2ExePath}"/>
         </DockPanel>
 
-        <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right" Width="100" Margin="0,8,0,0"/>
+        <ui:Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right" Width="100" Margin="0,8,0,0">
+            <ui:Button.Icon>
+                <ui:SymbolIcon Symbol="Save24"/>
+            </ui:Button.Icon>
+        </ui:Button>
         </StackPanel>
     </Grid>
 </ui:FluentWindow>
