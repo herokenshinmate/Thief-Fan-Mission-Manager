@@ -30,12 +30,12 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand DeleteSelectedCommand { get; }
     public IAsyncRelayCommand<MissionStatus> SetSelectedStatusCommand { get; }
 
-    public string[] GameFilterOptions { get; } = { "(All)", "Thief1", "Thief2" };
+    public string[] GameFilterOptions { get; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
     public string GameFilterDisplay
     {
-        get => GameFilter?.ToString() ?? "(All)";
-        set => GameFilter = value == "(All)" ? null : Enum.Parse<GameTitle>(value);
+        get => GameFilter?.ToDisplayName() ?? "(All)";
+        set => GameFilter = value == "(All)" ? null : GameTitleNames.Parse(value);
     }
 
     [ObservableProperty]

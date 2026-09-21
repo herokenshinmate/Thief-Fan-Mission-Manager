@@ -16,6 +16,11 @@
                         <models:GameTitle>Thief2</models:GameTitle>
                     </x:Array>
                 </ComboBox.ItemsSource>
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource GameTitleToDisplayNameConverter}}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
             </ComboBox>
 
             <TextBlock Text="Author"/>
