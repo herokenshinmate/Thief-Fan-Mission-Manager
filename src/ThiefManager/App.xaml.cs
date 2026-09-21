@@ -3,6 +3,7 @@ using System.Windows;
 using ThiefManager.Data;
 using ThiefManager.Services;
 using ThiefManager.ViewModels;
+using ThiefManager.Views;
 
 namespace ThiefManager;
 
@@ -29,6 +30,23 @@ public partial class App : Application
 
         var mainViewModel = new MainViewModel(missionRepository, launchService);
         var settings = await settingsRepository.GetAsync();
+
+        var isFirstRun = string.IsNullOrWhiteSpace(settings.Thief1FmFolder)
+            && string.IsNullOrWhiteSpace(settings.Thief2FmFolder)
+            && string.IsNullOrWhiteSpace(settings.Thief1ExePath)
+            && string.IsNullOrWhiteSpace(settings.Thief2ExePath);
+
+        if (isFirstRun)
+        {
+            var firstRunSettingsViewModel = new SettingsViewModel(settingsRepository);
+            await firstRunSettingsViewModel.LoadCommand.ExecuteAsync(null);
+            var firstRunSettingsWindow = new SettingsWindow(firstRunSettingsViewModel);
+            firstRunSettingsViewModel.Saved += (_, _) => firstRunSettingsWindow.Close();
+            firstRunSettingsWindow.ShowDialog();
+
+            settings = await settingsRepository.GetAsync();
+        }
+
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
         var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader);
