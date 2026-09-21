@@ -1,0 +1,60 @@
+<Window x:Class="ThiefManager.Views.MissionEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:ThiefManager.Models"
+        Title="Mission" Height="620" Width="480">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="12">
+            <TextBlock Text="Title"/>
+            <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Game"/>
+            <ComboBox SelectedItem="{Binding Game}" Margin="0,0,0,8">
+                <ComboBox.ItemsSource>
+                    <x:Array Type="{x:Type models:GameTitle}">
+                        <models:GameTitle>Thief1</models:GameTitle>
+                        <models:GameTitle>Thief2</models:GameTitle>
+                    </x:Array>
+                </ComboBox.ItemsSource>
+            </ComboBox>
+
+            <TextBlock Text="Author"/>
+            <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Release Year"/>
+            <TextBox Text="{Binding ReleaseYear, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Status"/>
+            <ComboBox SelectedItem="{Binding Status}" Margin="0,0,0,8">
+                <ComboBox.ItemsSource>
+                    <x:Array Type="{x:Type models:MissionStatus}">
+                        <models:MissionStatus>NotPlayed</models:MissionStatus>
+                        <models:MissionStatus>InProgress</models:MissionStatus>
+                        <models:MissionStatus>Completed</models:MissionStatus>
+                        <models:MissionStatus>Abandoned</models:MissionStatus>
+                    </x:Array>
+                </ComboBox.ItemsSource>
+            </ComboBox>
+
+            <TextBlock Text="Rating"/>
+            <TextBox Text="{Binding Rating, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Tags"/>
+            <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Notes"/>
+            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="60" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Date Started"/>
+            <TextBox Text="{Binding DateStarted, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Date Completed"/>
+            <TextBox Text="{Binding DateCompleted, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Folder Path"/>
+            <TextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+            <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
