@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ThiefManager.Data;
 using ThiefManager.Models;
+using ThiefManager.Services;
 
 namespace ThiefManager.ViewModels;
 
@@ -25,7 +26,18 @@ public partial class MissionEditViewModel : ObservableObject
     [ObservableProperty] private string? author;
     [ObservableProperty] private int? releaseYear;
     [ObservableProperty] private MissionStatus status = MissionStatus.NotPlayed;
+
+    public string[] RatingOptions { get; } = { "(Not Rated)", "0", "1", "2", "3", "4", "5" };
+
+    public string RatingDisplay
+    {
+        get => Rating?.ToString() ?? "(Not Rated)";
+        set => Rating = value == "(Not Rated)" ? null : int.Parse(value);
+    }
+
     [ObservableProperty] private int? rating;
+
+    partial void OnRatingChanged(int? value) => OnPropertyChanged(nameof(RatingDisplay));
     [ObservableProperty] private string tags = string.Empty;
     [ObservableProperty] private string? notes;
     [ObservableProperty] private DateTime? dateStarted;
@@ -57,7 +69,6 @@ public partial class MissionEditViewModel : ObservableObject
             Game = Game,
             Author = Author,
             ReleaseYear = ReleaseYear,
-            Status = Status,
             Rating = Rating,
             Tags = Tags,
             Notes = Notes,
@@ -65,6 +76,10 @@ public partial class MissionEditViewModel : ObservableObject
             DateCompleted = DateCompleted,
             FolderPath = FolderPath
         };
+
+        MissionStatusDates.Apply(mission, Status, DateTime.Now);
+        DateStarted = mission.DateStarted;
+        DateCompleted = mission.DateCompleted;
 
         if (_id == 0)
             await _missionRepository.AddAsync(mission);

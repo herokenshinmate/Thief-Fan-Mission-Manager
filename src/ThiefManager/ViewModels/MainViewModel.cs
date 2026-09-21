@@ -149,7 +149,7 @@ public partial class MainViewModel : ObservableObject
         if (SelectedMission is null)
             return;
 
-        SelectedMission.Status = status;
+        MissionStatusDates.Apply(SelectedMission, status, DateTime.Now);
         await _missionRepository.UpdateAsync(SelectedMission);
         ApplyQuery();
     }
