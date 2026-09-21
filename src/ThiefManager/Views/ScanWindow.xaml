@@ -1,22 +1,33 @@
 <Window x:Class="ThiefManager.Views.ScanWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Scan for New Missions" Height="400" Width="500">
-    <DockPanel Margin="12">
+        Title="Scan for New Missions" Width="560" Height="440" MinWidth="480" MinHeight="320"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top"
+                   Text="Scan your configured FM folders for missions not yet in your catalog. Check the ones you want to add, edit the title if needed, then click Import Selected."
+                   Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-            <Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"/>
-            <Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"/>
+            <Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"
+                    ToolTip="Set a Thief 1 FM folder in Settings to enable this."/>
+            <Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"
+                    ToolTip="Set a Thief 2 FM folder in Settings to enable this."/>
         </StackPanel>
 
-        <TextBlock DockPanel.Dock="Top" Text="{Binding ScanError}" Foreground="Red" Margin="0,0,0,8"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ScanError}" Foreground="#FFE05252" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-        <Button DockPanel.Dock="Bottom" Content="Import Selected" Command="{Binding ImportSelectedCommand}" HorizontalAlignment="Right" Margin="0,8,0,0"/>
-        <ListView ItemsSource="{Binding Candidates}">
+        <Button DockPanel.Dock="Bottom" Content="Import Selected" Command="{Binding ImportSelectedCommand}"
+                HorizontalAlignment="Right" Width="140" Margin="0,12,0,0"/>
+
+        <TextBlock DockPanel.Dock="Top" Text="New Mission Folders" FontWeight="SemiBold" Margin="0,4,0,6"/>
+
+        <ListView ItemsSource="{Binding Candidates}" BorderThickness="1">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding IsSelected}" Margin="0,0,8,0"/>
-                        <TextBox Text="{Binding SuggestedTitle}" Width="300"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding SuggestedTitle}" Width="380"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
