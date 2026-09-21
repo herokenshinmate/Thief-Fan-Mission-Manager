@@ -37,7 +37,7 @@
             </ComboBox>
 
             <TextBlock Text="Rating"/>
-            <TextBox Text="{Binding Rating, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <ComboBox ItemsSource="{Binding RatingOptions}" SelectedItem="{Binding RatingDisplay}" Margin="0,0,0,8"/>
 
             <TextBlock Text="Tags"/>
             <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
@@ -45,11 +45,15 @@
             <TextBlock Text="Notes"/>
             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="60" Margin="0,0,0,8"/>
 
+            <TextBlock Text="Dates are set automatically based on Status." Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" Margin="0,0,0,4"/>
+
             <TextBlock Text="Date Started"/>
-            <TextBox Text="{Binding DateStarted, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <TextBlock Text="{Binding DateStarted, StringFormat=d, TargetNullValue='—'}"
+                       Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,8"/>
 
             <TextBlock Text="Date Completed"/>
-            <TextBox Text="{Binding DateCompleted, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <TextBlock Text="{Binding DateCompleted, StringFormat=d, TargetNullValue='—'}"
+                       Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,8"/>
 
             <TextBlock Text="Folder Path"/>
             <TextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>

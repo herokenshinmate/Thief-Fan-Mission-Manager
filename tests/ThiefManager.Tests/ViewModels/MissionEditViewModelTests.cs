@@ -45,6 +45,50 @@ public class MissionEditViewModelTests
     }
 
     [Fact]
+    public async Task SaveCommand_SettingStatusToCompleted_AutoPopulatesBothDates()
+    {
+        var repo = new FakeMissionRepository();
+        var vm = new MissionEditViewModel(repo)
+        {
+            Title = "New Mission",
+            FolderPath = "p1",
+            Status = MissionStatus.Completed
+        };
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = Assert.Single(repo.Missions);
+        Assert.NotNull(saved.DateStarted);
+        Assert.NotNull(saved.DateCompleted);
+        Assert.Equal(saved.DateStarted, vm.DateStarted);
+        Assert.Equal(saved.DateCompleted, vm.DateCompleted);
+    }
+
+    [Fact]
+    public async Task SaveCommand_SettingStatusBackToNotPlayed_ClearsBothDates()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission
+        {
+            Title = "Original",
+            FolderPath = "p1",
+            Status = MissionStatus.Completed,
+            DateStarted = DateTime.Now.AddDays(-5),
+            DateCompleted = DateTime.Now.AddDays(-1)
+        });
+        var existing = repo.Missions.Single();
+        var vm = new MissionEditViewModel(repo);
+        vm.LoadFrom(existing);
+
+        vm.Status = MissionStatus.NotPlayed;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = Assert.Single(repo.Missions);
+        Assert.Null(saved.DateStarted);
+        Assert.Null(saved.DateCompleted);
+    }
+
+    [Fact]
     public async Task SaveCommand_RaisesSavedEvent()
     {
         var repo = new FakeMissionRepository();
