@@ -21,8 +21,16 @@
         <DockPanel Grid.Row="1" Margin="12,4,12,12">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Settings..." Click="OpenSettings_Click"/>
-                <MenuItem Header="_Scan for New Missions..." Click="OpenScan_Click"/>
+                <MenuItem Header="_Settings..." Click="OpenSettings_Click">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Settings24"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Scan for New Missions..." Click="OpenScan_Click">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="ArrowSync24"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
 
@@ -42,9 +50,21 @@
                       ItemsSource="{Binding SortFieldOptions}"
                       SelectedItem="{Binding SortFieldDisplay}"/>
             <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-            <Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,0"/>
-            <Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,0"/>
-            <Button Content="Delete" Command="{Binding DeleteSelectedCommand}"/>
+            <ui:Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,0">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Add24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,0">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Play24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button Content="Delete" Command="{Binding DeleteSelectedCommand}">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Delete24"/>
+                </ui:Button.Icon>
+            </ui:Button>
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"/>
@@ -55,15 +75,42 @@
                   MouseRightButtonUp="MissionList_MouseRightButtonUp">
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                    <MenuItem Header="Properties..." Click="MissionProperties_Click"/>
+                    <MenuItem Header="Properties..." Click="MissionProperties_Click">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Info24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Set Status">
-                        <MenuItem Header="Not Played" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.NotPlayed}"/>
-                        <MenuItem Header="In Progress" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.InProgress}"/>
-                        <MenuItem Header="Completed" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Completed}"/>
-                        <MenuItem Header="Abandoned" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Abandoned}"/>
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Flag24"/>
+                        </MenuItem.Icon>
+                        <MenuItem Header="Not Played" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.NotPlayed}">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Circle24"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="In Progress" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.InProgress}">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="PlayCircle24"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Completed" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Completed}">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="CheckmarkCircle24"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Abandoned" Command="{Binding SetSelectedStatusCommand}" CommandParameter="{x:Static models:MissionStatus.Abandoned}">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="DismissCircle24"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}"/>
+                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Delete24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </ContextMenu>
             </ListView.ContextMenu>
             <ListView.View>

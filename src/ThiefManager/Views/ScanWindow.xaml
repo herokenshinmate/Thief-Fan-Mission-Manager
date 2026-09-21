@@ -19,16 +19,28 @@
                    Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-            <Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"
-                    ToolTip="Set a Thief 1 FM folder in Settings to enable this."/>
-            <Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"
-                    ToolTip="Set a Thief 2 FM folder in Settings to enable this."/>
+            <ui:Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"
+                    ToolTip="Set a Thief 1 FM folder in Settings to enable this.">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"
+                    ToolTip="Set a Thief 2 FM folder in Settings to enable this.">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                </ui:Button.Icon>
+            </ui:Button>
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ScanError}" Foreground="#FFE05252" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-        <Button DockPanel.Dock="Bottom" Content="Import Selected" Command="{Binding ImportSelectedCommand}"
-                HorizontalAlignment="Right" Width="140" Margin="0,12,0,0"/>
+        <ui:Button DockPanel.Dock="Bottom" Content="Import Selected" Command="{Binding ImportSelectedCommand}"
+                HorizontalAlignment="Right" Width="160" Margin="0,12,0,0">
+            <ui:Button.Icon>
+                <ui:SymbolIcon Symbol="ArrowDownload24"/>
+            </ui:Button.Icon>
+        </ui:Button>
 
         <TextBlock DockPanel.Dock="Top" Text="New Mission Folders" FontWeight="SemiBold" Margin="0,4,0,6"/>
 
