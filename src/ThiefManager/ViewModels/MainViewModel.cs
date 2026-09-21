@@ -39,11 +39,27 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private GameTitle? gameFilter;
 
+    public string[] StatusFilterOptions { get; } = { "(All)", "NotPlayed", "InProgress", "Completed", "Abandoned" };
+
+    public string StatusFilterDisplay
+    {
+        get => StatusFilter?.ToString() ?? "(All)";
+        set => StatusFilter = value == "(All)" ? null : Enum.Parse<MissionStatus>(value);
+    }
+
     [ObservableProperty]
     private MissionStatus? statusFilter;
 
     [ObservableProperty]
     private string? tagFilter;
+
+    public string[] SortFieldOptions { get; } = { "Title", "Game", "Status", "Rating" };
+
+    public string SortFieldDisplay
+    {
+        get => SortField.ToString();
+        set => SortField = Enum.Parse<SortField>(value);
+    }
 
     [ObservableProperty]
     private SortField sortField = SortField.Title;
@@ -62,9 +78,17 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(GameFilterDisplay));
         ApplyQuery();
     }
-    partial void OnStatusFilterChanged(MissionStatus? value) => ApplyQuery();
+    partial void OnStatusFilterChanged(MissionStatus? value)
+    {
+        OnPropertyChanged(nameof(StatusFilterDisplay));
+        ApplyQuery();
+    }
     partial void OnTagFilterChanged(string? value) => ApplyQuery();
-    partial void OnSortFieldChanged(SortField value) => ApplyQuery();
+    partial void OnSortFieldChanged(SortField value)
+    {
+        OnPropertyChanged(nameof(SortFieldDisplay));
+        ApplyQuery();
+    }
     partial void OnSortAscendingChanged(bool value) => ApplyQuery();
 
     partial void OnSelectedMissionChanged(FanMission? value)

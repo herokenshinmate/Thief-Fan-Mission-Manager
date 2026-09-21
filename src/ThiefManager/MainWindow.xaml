@@ -21,6 +21,15 @@
                       SelectedItem="{Binding GameFilterDisplay}"/>
             <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0"/>
+            <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox Width="100" Margin="0,0,12,0"
+                      ItemsSource="{Binding StatusFilterOptions}"
+                      SelectedItem="{Binding StatusFilterDisplay}"/>
+            <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox Width="80" Margin="0,0,4,0"
+                      ItemsSource="{Binding SortFieldOptions}"
+                      SelectedItem="{Binding SortFieldDisplay}"/>
+            <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,0"/>
             <Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,0"/>
             <Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,0"/>
             <Button Content="Delete" Command="{Binding DeleteSelectedCommand}"/>
