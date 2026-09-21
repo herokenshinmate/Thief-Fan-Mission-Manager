@@ -1,9 +1,11 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using ThiefManager.Data;
 using ThiefManager.Services;
 using ThiefManager.ViewModels;
 using ThiefManager.Views;
+using Wpf.Ui.Appearance;
 
 namespace ThiefManager;
 
@@ -12,6 +14,9 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+        ApplicationAccentColorManager.Apply(Color.FromRgb(0xC9, 0xA2, 0x27));
 
         var appDataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
