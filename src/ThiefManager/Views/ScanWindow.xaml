@@ -11,7 +11,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Scan for New Missions">
+        <ui:TitleBar Grid.Row="0" Title="Scan for New Missions" FontFamily="Cambria" FontSize="15" FontWeight="SemiBold">
             <ui:TitleBar.Icon>
                 <ui:SymbolIcon Symbol="FolderSearch24" FontSize="16"/>
             </ui:TitleBar.Icon>
