@@ -160,7 +160,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="{Binding Status, Converter={StaticResource MissionStatusToIconConverter}}"
                                                    Foreground="{Binding Status, Converter={StaticResource MissionStatusToBrushConverter}}" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding Status}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource MissionStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

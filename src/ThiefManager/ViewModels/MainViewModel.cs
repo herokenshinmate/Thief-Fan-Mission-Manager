@@ -47,12 +47,19 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private GameTitle? gameFilter;
 
-    public string[] StatusFilterOptions { get; } = { "(All)", "NotPlayed", "InProgress", "Completed", "Abandoned" };
+    public string[] StatusFilterOptions { get; } =
+    {
+        "(All)",
+        MissionStatusNames.NotPlayedDisplayName,
+        MissionStatusNames.InProgressDisplayName,
+        MissionStatusNames.CompletedDisplayName,
+        MissionStatusNames.AbandonedDisplayName
+    };
 
     public string StatusFilterDisplay
     {
-        get => StatusFilter?.ToString() ?? "(All)";
-        set => StatusFilter = value == "(All)" ? null : Enum.Parse<MissionStatus>(value);
+        get => StatusFilter?.ToDisplayName() ?? "(All)";
+        set => StatusFilter = value == "(All)" ? null : MissionStatusNames.Parse(value);
     }
 
     [ObservableProperty]
