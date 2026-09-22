@@ -7,7 +7,7 @@
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Thief FM Manager" Height="600" Width="1100" MinHeight="500" MinWidth="900"
+        Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="1150"
         Icon="pack://application:,,,/Assets/AppIcon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
     <Grid>
@@ -44,6 +44,7 @@
         </Border>
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,8">
+            <ui:SymbolIcon Symbol="Games24" Foreground="#FF9575CD" Margin="0,0,4,0"/>
             <TextBlock Text="Game:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <ComboBox Width="220" Margin="0,0,12,0"
                       ItemsSource="{Binding GameFilterOptions}"
@@ -51,18 +52,24 @@
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Games24" Margin="0,0,6,0"/>
+                            <Grid Width="20" Height="20" Margin="0,0,6,0">
+                                <ui:SymbolIcon Symbol="Games24"/>
+                                <Image Source="{Binding Converter={StaticResource GameFilterOptionToIconSourceConverter}}" Stretch="Uniform"/>
+                            </Grid>
                             <TextBlock Text="{Binding}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,4,0"/>
             <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0"/>
+            <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,4,0"/>
             <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <ComboBox Width="100" Margin="0,0,12,0"
                       ItemsSource="{Binding StatusFilterOptions}"
                       SelectedItem="{Binding StatusFilterDisplay}"/>
+            <ui:SymbolIcon Symbol="ArrowSort24" Foreground="#FF64B5F6" Margin="0,0,4,0"/>
             <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <ComboBox Width="80" Margin="0,0,4,0"
                       ItemsSource="{Binding SortFieldOptions}"

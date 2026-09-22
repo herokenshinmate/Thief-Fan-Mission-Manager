@@ -95,6 +95,7 @@ public partial class MainWindow : FluentWindow
             var settings = await _settingsRepository.GetAsync();
             _viewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
             Services.GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
+            _viewModel.RefreshGameIcons();
             await _viewModel.LoadCommand.ExecuteAsync(null);
             settingsWindow.Close();
         };
