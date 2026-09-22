@@ -11,7 +11,11 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Scan for New Missions"/>
+        <ui:TitleBar Grid.Row="0" Title="Scan for New Missions">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="FolderSearch24" FontSize="16"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <DockPanel Grid.Row="1" Margin="16">
         <TextBlock DockPanel.Dock="Top"
@@ -22,13 +26,13 @@
             <ui:Button x:Name="ScanThief1Button" Content="Scan Thief 1" Click="ScanThief1_Click" Margin="0,0,8,0"
                     ToolTip="Set a Thief 1 FM folder in Settings to enable this.">
                 <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                    <ui:SymbolIcon Symbol="ArrowSync24" Foreground="#FFC9A227"/>
                 </ui:Button.Icon>
             </ui:Button>
             <ui:Button x:Name="ScanThief2Button" Content="Scan Thief 2" Click="ScanThief2_Click"
                     ToolTip="Set a Thief 2 FM folder in Settings to enable this.">
                 <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                    <ui:SymbolIcon Symbol="ArrowSync24" Foreground="#FF4DB6AC"/>
                 </ui:Button.Icon>
             </ui:Button>
         </StackPanel>
@@ -42,14 +46,18 @@
             </ui:Button.Icon>
         </ui:Button>
 
-        <TextBlock DockPanel.Dock="Top" Text="New Mission Folders" FontWeight="SemiBold" Margin="0,4,0,6"/>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,4,0,6">
+            <ui:SymbolIcon Symbol="FolderAdd24" Margin="0,0,6,0"/>
+            <TextBlock Text="New Mission Folders" FontWeight="SemiBold"/>
+        </StackPanel>
 
         <ListView ItemsSource="{Binding Candidates}" BorderThickness="1">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal" Margin="0,4">
                         <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBox Text="{Binding SuggestedTitle}" Width="380"/>
+                        <ui:SymbolIcon Symbol="Document24" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding SuggestedTitle}" Width="360"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

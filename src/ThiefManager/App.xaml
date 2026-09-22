@@ -12,6 +12,10 @@
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <converters:GameTitleToDisplayNameConverter x:Key="GameTitleToDisplayNameConverter"/>
+            <converters:GameTitleToBrushConverter x:Key="GameTitleToBrushConverter"/>
+            <converters:MissionStatusToIconConverter x:Key="MissionStatusToIconConverter"/>
+            <converters:MissionStatusToBrushConverter x:Key="MissionStatusToBrushConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
