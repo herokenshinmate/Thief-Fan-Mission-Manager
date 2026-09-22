@@ -7,7 +7,7 @@
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="1150"
+        Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="700"
         Icon="pack://application:,,,/Assets/AppIcon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
     <Grid>
@@ -43,10 +43,10 @@
         </Menu>
         </Border>
 
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,8">
-            <ui:SymbolIcon Symbol="Games24" Foreground="#FF9575CD" Margin="0,0,4,0"/>
-            <TextBlock Text="Game:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="220" Margin="0,0,12,0"
+        <WrapPanel DockPanel.Dock="Top" Margin="0,8,0,2">
+            <ui:SymbolIcon Symbol="Games24" Foreground="#FF9575CD" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Game:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <ComboBox Width="220" Margin="0,0,12,6"
                       ItemsSource="{Binding GameFilterOptions}"
                       SelectedItem="{Binding GameFilterDisplay}">
                 <ComboBox.ItemTemplate>
@@ -61,41 +61,41 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
-            <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,4,0"/>
-            <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0"/>
-            <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,4,0"/>
-            <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="100" Margin="0,0,12,0"
+            <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,6"/>
+            <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <ComboBox Width="100" Margin="0,0,12,6"
                       ItemsSource="{Binding StatusFilterOptions}"
                       SelectedItem="{Binding StatusFilterDisplay}"/>
-            <ui:SymbolIcon Symbol="ArrowSort24" Foreground="#FF64B5F6" Margin="0,0,4,0"/>
-            <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="80" Margin="0,0,12,0"
+            <ui:SymbolIcon Symbol="ArrowSort24" Foreground="#FF64B5F6" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <ComboBox Width="80" Margin="0,0,12,6"
                       ItemsSource="{Binding SortFieldOptions}"
                       SelectedItem="{Binding SortFieldDisplay}"/>
-            <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D" Margin="0,0,4,0"/>
-            <TextBlock Text="Install:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="110" Margin="0,0,12,0"
+            <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,6"/>
+            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Install:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <ComboBox Width="110" Margin="0,0,12,6"
                       ItemsSource="{Binding InstallStatusFilterOptions}"
                       SelectedItem="{Binding InstallStatusFilterDisplay}"/>
-            <ui:Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,0">
+            <ui:Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,6">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Add24"/>
                 </ui:Button.Icon>
             </ui:Button>
-            <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,0">
+            <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,6">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Play24"/>
                 </ui:Button.Icon>
             </ui:Button>
-            <ui:Button Content="Delete" Command="{Binding DeleteSelectedCommand}">
+            <ui:Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Margin="0,0,0,6">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Delete24"/>
                 </ui:Button.Icon>
             </ui:Button>
-        </StackPanel>
+        </WrapPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"/>
         <TextBlock DockPanel.Dock="Top" Text="{Binding InstallError}" Foreground="Red" Margin="0,0,0,8"/>
