@@ -16,6 +16,8 @@
             <converters:MissionStatusToIconConverter x:Key="MissionStatusToIconConverter"/>
             <converters:MissionStatusToBrushConverter x:Key="MissionStatusToBrushConverter"/>
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:GameTitleToIconSourceConverter x:Key="GameTitleToIconSourceConverter"/>
+            <converters:ExePathToIconSourceConverter x:Key="ExePathToIconSourceConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -34,7 +34,10 @@
         </DockPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-            <ui:SymbolIcon Symbol="Games24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+            <Grid Width="18" Height="18" Margin="0,0,6,0">
+                <ui:SymbolIcon Symbol="Games24" Foreground="#FFC9A227"/>
+                <Image Source="{Binding Thief1ExePath, Converter={StaticResource ExePathToIconSourceConverter}}" Stretch="Uniform"/>
+            </Grid>
             <TextBlock Text="Thief 1 Executable"/>
         </StackPanel>
         <TextBlock Text="The game (or loader) executable that launches Thief 1. Example: C:\Games\Thief1\Thief.exe"
@@ -64,7 +67,10 @@
         </DockPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-            <ui:SymbolIcon Symbol="Games24" Foreground="#FF4DB6AC" Margin="0,0,6,0"/>
+            <Grid Width="18" Height="18" Margin="0,0,6,0">
+                <ui:SymbolIcon Symbol="Games24" Foreground="#FF4DB6AC"/>
+                <Image Source="{Binding Thief2ExePath, Converter={StaticResource ExePathToIconSourceConverter}}" Stretch="Uniform"/>
+            </Grid>
             <TextBlock Text="Thief 2 Executable"/>
         </StackPanel>
         <TextBlock Text="The game (or loader) executable that launches Thief 2. Example: C:\Games\Thief2\Thief2.exe"
