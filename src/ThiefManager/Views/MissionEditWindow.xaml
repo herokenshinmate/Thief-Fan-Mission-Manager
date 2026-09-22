@@ -126,6 +126,22 @@
             </StackPanel>
             <TextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
+                <TextBlock Text="Thief Guild URL"/>
+            </StackPanel>
+            <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, and tags. Leave blank and click Fetch to search by title instead."
+                       Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+            <DockPanel Margin="0,0,0,4">
+                <ui:Button DockPanel.Dock="Right" Content="Fetch Metadata" Command="{Binding FetchThiefGuildMetadataCommand}" Width="140" Margin="8,0,0,0">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowDownload24"/>
+                    </ui:Button.Icon>
+                </ui:Button>
+                <TextBox Text="{Binding ThiefGuildUrl, UpdateSourceTrigger=PropertyChanged}"/>
+            </DockPanel>
+            <TextBlock Text="{Binding ThiefGuildLookupStatus}" Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
             <ui:Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Save24"/>

@@ -251,4 +251,32 @@ public partial class MainViewModel : ObservableObject
         NotifyMissionCommandsCanExecuteChanged();
         ApplyQuery();
     }
+
+    /// <summary>
+    /// Applies a successful Thief Guild lookup to a mission: fills in only the fields that
+    /// are currently blank (never overwriting anything already entered) and records the
+    /// matched URL so it isn't looked up again.
+    /// </summary>
+    public async Task ApplyThiefGuildMetadataAsync(FanMission mission, ThiefGuildLookupResult result)
+    {
+        if (string.IsNullOrWhiteSpace(mission.Author))
+            mission.Author = result.Author;
+        if (mission.ReleaseYear is null)
+            mission.ReleaseYear = result.ReleaseYear;
+        if (string.IsNullOrWhiteSpace(mission.Tags))
+            mission.Tags = result.Tags;
+        mission.ThiefGuildUrl = result.Url;
+
+        await _missionRepository.UpdateAsync(mission);
+        ApplyQuery();
+    }
+
+    /// <summary>
+    /// Records that a failed Thief Guild lookup was dismissed, so it is never auto-retried.
+    /// </summary>
+    public async Task DismissThiefGuildLookupAsync(FanMission mission)
+    {
+        mission.ThiefGuildLookupDismissed = true;
+        await _missionRepository.UpdateAsync(mission);
+    }
 }
