@@ -71,10 +71,15 @@
                       SelectedItem="{Binding StatusFilterDisplay}"/>
             <ui:SymbolIcon Symbol="ArrowSort24" Foreground="#FF64B5F6" Margin="0,0,4,0"/>
             <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="80" Margin="0,0,4,0"
+            <ComboBox Width="80" Margin="0,0,12,0"
                       ItemsSource="{Binding SortFieldOptions}"
                       SelectedItem="{Binding SortFieldDisplay}"/>
             <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D" Margin="0,0,4,0"/>
+            <TextBlock Text="Install:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox Width="110" Margin="0,0,12,0"
+                      ItemsSource="{Binding InstallStatusFilterOptions}"
+                      SelectedItem="{Binding InstallStatusFilterDisplay}"/>
             <ui:Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,0">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Add24"/>
@@ -93,6 +98,7 @@
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding InstallError}" Foreground="Red" Margin="0,0,0,8"/>
 
         <ListView ItemsSource="{Binding VisibleMissions}"
                   SelectedItem="{Binding SelectedMission}"
@@ -131,6 +137,17 @@
                         </MenuItem>
                     </MenuItem>
                     <Separator/>
+                    <MenuItem Header="Install" Command="{Binding InstallSelectedCommand}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Uninstall..." Click="Uninstall_Click">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Delete24" Foreground="#FFE57373"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
                     <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Delete24"/>
@@ -161,6 +178,17 @@
                                     <ui:SymbolIcon Symbol="{Binding Status, Converter={StaticResource MissionStatusToIconConverter}}"
                                                    Foreground="{Binding Status, Converter={StaticResource MissionStatusToBrushConverter}}" Margin="0,0,6,0"/>
                                     <TextBlock Text="{Binding Status, Converter={StaticResource MissionStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Install Status" Width="130">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding InstallStatus, Converter={StaticResource InstallStatusToIconConverter}}"
+                                                   Foreground="{Binding InstallStatus, Converter={StaticResource InstallStatusToBrushConverter}}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding InstallStatus, Converter={StaticResource InstallStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

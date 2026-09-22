@@ -7,4 +7,6 @@ public class AppSettings
     public string? Thief2FmFolder { get; set; }
     public string? Thief1ExePath { get; set; }
     public string? Thief2ExePath { get; set; }
+    public string? Thief1DownloadsFolder { get; set; }
+    public string? Thief2DownloadsFolder { get; set; }
 }

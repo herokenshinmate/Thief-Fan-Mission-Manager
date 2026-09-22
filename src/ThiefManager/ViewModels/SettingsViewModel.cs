@@ -25,6 +25,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? thief2FmFolder;
     [ObservableProperty] private string? thief1ExePath;
     [ObservableProperty] private string? thief2ExePath;
+    [ObservableProperty] private string? thief1DownloadsFolder;
+    [ObservableProperty] private string? thief2DownloadsFolder;
 
     private async Task LoadAsync()
     {
@@ -33,6 +35,8 @@ public partial class SettingsViewModel : ObservableObject
         Thief2FmFolder = settings.Thief2FmFolder;
         Thief1ExePath = settings.Thief1ExePath;
         Thief2ExePath = settings.Thief2ExePath;
+        Thief1DownloadsFolder = settings.Thief1DownloadsFolder;
+        Thief2DownloadsFolder = settings.Thief2DownloadsFolder;
     }
 
     private async Task SaveAsync()
@@ -42,7 +46,9 @@ public partial class SettingsViewModel : ObservableObject
             Thief1FmFolder = Thief1FmFolder,
             Thief2FmFolder = Thief2FmFolder,
             Thief1ExePath = Thief1ExePath,
-            Thief2ExePath = Thief2ExePath
+            Thief2ExePath = Thief2ExePath,
+            Thief1DownloadsFolder = Thief1DownloadsFolder,
+            Thief2DownloadsFolder = Thief2DownloadsFolder
         });
 
         Saved?.Invoke(this, EventArgs.Empty);

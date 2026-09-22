@@ -11,12 +11,14 @@ namespace ThiefManager.ViewModels;
 public partial class ScanViewModel : ObservableObject
 {
     private readonly IDirectoryReader _directoryReader;
+    private readonly IArchiveFileReader _archiveFileReader;
     private readonly IMissionRepository _missionRepository;
     private GameTitle _lastScannedGame;
 
-    public ScanViewModel(IDirectoryReader directoryReader, IMissionRepository missionRepository)
+    public ScanViewModel(IDirectoryReader directoryReader, IArchiveFileReader archiveFileReader, IMissionRepository missionRepository)
     {
         _directoryReader = directoryReader;
+        _archiveFileReader = archiveFileReader;
         _missionRepository = missionRepository;
         ImportSelectedCommand = new AsyncRelayCommand(ImportSelectedAsync);
     }
@@ -51,6 +53,32 @@ public partial class ScanViewModel : ObservableObject
             Candidates.Add(new ScanCandidateViewModel(candidate.SuggestedTitle, candidate.FolderPath));
     }
 
+    public async Task ScanDownloads(GameTitle game, string downloadsFolder, string fmFolder)
+    {
+        ScanError = null;
+        _lastScannedGame = game;
+        var existing = await _missionRepository.GetAllAsync();
+
+        IReadOnlyList<string> archiveFiles;
+        try
+        {
+            archiveFiles = _archiveFileReader.GetArchiveFiles(downloadsFolder);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            ScanError = $"Could not read folder: {downloadsFolder}";
+            Candidates.Clear();
+            return;
+        }
+
+        var existingArchivePaths = existing.Where(m => m.ArchivePath is not null).Select(m => m.ArchivePath!);
+        var newCandidates = DownloadedArchiveScanner.FindNewArchives(archiveFiles, fmFolder, existingArchivePaths);
+
+        Candidates.Clear();
+        foreach (var candidate in newCandidates)
+            Candidates.Add(new ScanCandidateViewModel(candidate.SuggestedTitle, candidate.TargetFolderPath, candidate.ArchivePath));
+    }
+
     private async Task ImportSelectedAsync()
     {
         var selected = Candidates.Where(c => c.IsSelected).ToList();
@@ -60,7 +88,9 @@ public partial class ScanViewModel : ObservableObject
             {
                 Title = candidate.SuggestedTitle,
                 Game = _lastScannedGame,
-                FolderPath = candidate.FolderPath
+                FolderPath = candidate.FolderPath,
+                ArchivePath = candidate.ArchivePath,
+                InstallStatus = candidate.ArchivePath is null ? InstallStatus.Installed : InstallStatus.NotInstalled
             });
             Candidates.Remove(candidate);
         }

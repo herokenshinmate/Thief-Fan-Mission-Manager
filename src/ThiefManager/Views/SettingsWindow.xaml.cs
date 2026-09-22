@@ -28,6 +28,12 @@ public partial class SettingsWindow : FluentWindow
     private void BrowseThief2ExePath_Click(object sender, RoutedEventArgs e) =>
         BrowseExecutable(path => _viewModel.Thief2ExePath = path);
 
+    private void BrowseThief1DownloadsFolder_Click(object sender, RoutedEventArgs e) =>
+        BrowseFolder(path => _viewModel.Thief1DownloadsFolder = path);
+
+    private void BrowseThief2DownloadsFolder_Click(object sender, RoutedEventArgs e) =>
+        BrowseFolder(path => _viewModel.Thief2DownloadsFolder = path);
+
     private void BrowseFolder(Action<string> onSelected)
     {
         var dialog = new OpenFolderDialog { Title = "Select Folder" };

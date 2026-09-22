@@ -27,13 +27,17 @@ public partial class App : Application
         ThiefManagerDbContext CreateContext() => new(dbPath);
         using (var db = CreateContext())
             db.Database.EnsureCreated();
+        SchemaUpgrader.EnsureColumns(dbPath);
 
         var missionRepository = new MissionRepository(CreateContext);
         var settingsRepository = new SettingsRepository(CreateContext);
         var launchService = new LaunchService(new ProcessLauncher(), new FileExistsChecker());
         var directoryReader = new DirectoryReader();
+        var archiveFileReader = new ArchiveFileReader();
+        var archiveInstaller = new ArchiveInstaller();
+        var folderDeleter = new FolderDeleter();
 
-        var mainViewModel = new MainViewModel(missionRepository, launchService);
+        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter);
         var settings = await settingsRepository.GetAsync();
 
         var isFirstRun = string.IsNullOrWhiteSpace(settings.Thief1FmFolder)
@@ -55,7 +59,7 @@ public partial class App : Application
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
         GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
-        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader);
+        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader);
         MainWindow = mainWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();

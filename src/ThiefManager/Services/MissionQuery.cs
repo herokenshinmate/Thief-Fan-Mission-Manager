@@ -10,7 +10,8 @@ public static class MissionQuery
         MissionStatus? statusFilter,
         string? tagFilter,
         SortField sortField,
-        bool ascending)
+        bool ascending,
+        InstallStatus? installStatusFilter = null)
     {
         var query = missions.AsEnumerable();
 
@@ -19,6 +20,9 @@ public static class MissionQuery
 
         if (statusFilter.HasValue)
             query = query.Where(m => m.Status == statusFilter.Value);
+
+        if (installStatusFilter.HasValue)
+            query = query.Where(m => m.InstallStatus == installStatusFilter.Value);
 
         if (!string.IsNullOrWhiteSpace(tagFilter))
         {

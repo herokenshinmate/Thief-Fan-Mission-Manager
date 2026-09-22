@@ -13,7 +13,9 @@ public class FakeSettingsRepository : ISettingsRepository
         Thief1FmFolder = _settings.Thief1FmFolder,
         Thief2FmFolder = _settings.Thief2FmFolder,
         Thief1ExePath = _settings.Thief1ExePath,
-        Thief2ExePath = _settings.Thief2ExePath
+        Thief2ExePath = _settings.Thief2ExePath,
+        Thief1DownloadsFolder = _settings.Thief1DownloadsFolder,
+        Thief2DownloadsFolder = _settings.Thief2DownloadsFolder
     });
 
     public Task SaveAsync(AppSettings settings)
