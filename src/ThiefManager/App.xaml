@@ -20,6 +20,9 @@
             <converters:ExePathToIconSourceConverter x:Key="ExePathToIconSourceConverter"/>
             <converters:GameFilterOptionToIconSourceConverter x:Key="GameFilterOptionToIconSourceConverter"/>
             <converters:MissionStatusToDisplayNameConverter x:Key="MissionStatusToDisplayNameConverter"/>
+            <converters:InstallStatusToIconConverter x:Key="InstallStatusToIconConverter"/>
+            <converters:InstallStatusToBrushConverter x:Key="InstallStatusToBrushConverter"/>
+            <converters:InstallStatusToDisplayNameConverter x:Key="InstallStatusToDisplayNameConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

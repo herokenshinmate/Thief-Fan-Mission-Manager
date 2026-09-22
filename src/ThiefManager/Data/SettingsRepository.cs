@@ -32,6 +32,8 @@ public class SettingsRepository : ISettingsRepository
             existing.Thief2FmFolder = settings.Thief2FmFolder;
             existing.Thief1ExePath = settings.Thief1ExePath;
             existing.Thief2ExePath = settings.Thief2ExePath;
+            existing.Thief1DownloadsFolder = settings.Thief1DownloadsFolder;
+            existing.Thief2DownloadsFolder = settings.Thief2DownloadsFolder;
         }
         await db.SaveChangesAsync();
     }

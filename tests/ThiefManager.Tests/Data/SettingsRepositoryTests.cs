@@ -40,6 +40,24 @@ public class SettingsRepositoryTests : IDisposable
         Assert.Equal(@"C:\Games\Thief1\fms", reloaded.Thief1FmFolder);
     }
 
+    [Fact]
+    public async Task SaveAsync_TwiceInARow_PersistsDownloadsFoldersOnTheUpdatePath()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.Thief1DownloadsFolder = @"C:\Downloads\Thief1";
+        await repo.SaveAsync(settings);
+
+        settings = await repo.GetAsync();
+        settings.Thief2DownloadsFolder = @"C:\Downloads\Thief2";
+        await repo.SaveAsync(settings);
+
+        var reloaded = await repo.GetAsync();
+
+        Assert.Equal(@"C:\Downloads\Thief1", reloaded.Thief1DownloadsFolder);
+        Assert.Equal(@"C:\Downloads\Thief2", reloaded.Thief2DownloadsFolder);
+    }
+
     public void Dispose()
     {
         try

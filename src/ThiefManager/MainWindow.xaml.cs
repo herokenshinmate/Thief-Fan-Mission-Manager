@@ -16,13 +16,15 @@ public partial class MainWindow : FluentWindow
     private readonly ISettingsRepository _settingsRepository;
     private readonly Services.LaunchService _launchService;
     private readonly Services.IDirectoryReader _directoryReader;
+    private readonly Services.IArchiveFileReader _archiveFileReader;
 
     public MainWindow(
         MainViewModel viewModel,
         IMissionRepository missionRepository,
         ISettingsRepository settingsRepository,
         Services.LaunchService launchService,
-        Services.IDirectoryReader directoryReader)
+        Services.IDirectoryReader directoryReader,
+        Services.IArchiveFileReader archiveFileReader)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -30,6 +32,7 @@ public partial class MainWindow : FluentWindow
         _settingsRepository = settingsRepository;
         _launchService = launchService;
         _directoryReader = directoryReader;
+        _archiveFileReader = archiveFileReader;
         DataContext = _viewModel;
         Loaded += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
     }
@@ -105,9 +108,35 @@ public partial class MainWindow : FluentWindow
     private async void OpenScan_Click(object sender, RoutedEventArgs e)
     {
         var settings = await _settingsRepository.GetAsync();
-        var scanViewModel = new ScanViewModel(_directoryReader, _missionRepository);
+        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository);
         var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
         scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
         scanWindow.ShowDialog();
+    }
+
+    private async void Uninstall_Click(object sender, RoutedEventArgs e)
+    {
+        var mission = _viewModel.SelectedMission;
+        if (mission is null)
+            return;
+
+        var reinstallNote = mission.ArchivePath is null
+            ? "This mission has no known source archive on record, so it can't be reinstalled automatically afterward."
+            : "You can reinstall it later from the same downloaded archive.";
+
+        var confirmDialog = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = "Uninstall Mission",
+            Content = $"Uninstall \"{mission.Title}\"?\n\nThis permanently deletes its folder from disk:\n{mission.FolderPath}\n\n{reinstallNote}",
+            PrimaryButtonText = "Uninstall",
+            PrimaryButtonAppearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            CloseButtonText = "Cancel"
+        };
+
+        var result = await confirmDialog.ShowDialogAsync();
+
+        if (result == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            await _viewModel.UninstallSelectedCommand.ExecuteAsync(null);
     }
 }

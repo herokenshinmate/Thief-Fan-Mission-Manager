@@ -11,16 +11,26 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IMissionRepository _missionRepository;
     private readonly LaunchService _launchService;
+    private readonly IArchiveInstaller _archiveInstaller;
+    private readonly IFolderDeleter _folderDeleter;
     private List<FanMission> _allMissions = new();
 
-    public MainViewModel(IMissionRepository missionRepository, LaunchService launchService)
+    public MainViewModel(
+        IMissionRepository missionRepository,
+        LaunchService launchService,
+        IArchiveInstaller archiveInstaller,
+        IFolderDeleter folderDeleter)
     {
         _missionRepository = missionRepository;
         _launchService = launchService;
+        _archiveInstaller = archiveInstaller;
+        _folderDeleter = folderDeleter;
         LoadCommand = new AsyncRelayCommand(LoadAsync);
-        LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null);
+        LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
         DeleteSelectedCommand = new AsyncRelayCommand(DeleteSelectedAsync, () => SelectedMission is not null);
         SetSelectedStatusCommand = new AsyncRelayCommand<MissionStatus>(SetSelectedStatusAsync, _ => SelectedMission is not null);
+        InstallSelectedCommand = new AsyncRelayCommand(InstallSelectedAsync, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.NotInstalled && SelectedMission.ArchivePath is not null);
+        UninstallSelectedCommand = new AsyncRelayCommand(UninstallSelectedAsync, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
     }
 
     public ObservableCollection<FanMission> VisibleMissions { get; } = new();
@@ -29,6 +39,8 @@ public partial class MainViewModel : ObservableObject
     public IRelayCommand LaunchSelectedCommand { get; }
     public IAsyncRelayCommand DeleteSelectedCommand { get; }
     public IAsyncRelayCommand<MissionStatus> SetSelectedStatusCommand { get; }
+    public IAsyncRelayCommand InstallSelectedCommand { get; }
+    public IAsyncRelayCommand UninstallSelectedCommand { get; }
 
     public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
@@ -65,6 +77,22 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private MissionStatus? statusFilter;
 
+    public string[] InstallStatusFilterOptions { get; } =
+    {
+        "(All)",
+        InstallStatusNames.InstalledDisplayName,
+        InstallStatusNames.NotInstalledDisplayName
+    };
+
+    public string InstallStatusFilterDisplay
+    {
+        get => InstallStatusFilter?.ToDisplayName() ?? "(All)";
+        set => InstallStatusFilter = value == "(All)" ? null : InstallStatusNames.Parse(value);
+    }
+
+    [ObservableProperty]
+    private InstallStatus? installStatusFilter;
+
     [ObservableProperty]
     private string? tagFilter;
 
@@ -88,6 +116,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? launchError;
 
+    [ObservableProperty]
+    private string? installError;
+
     partial void OnGameFilterChanged(GameTitle? value)
     {
         OnPropertyChanged(nameof(GameFilterDisplay));
@@ -96,6 +127,11 @@ public partial class MainViewModel : ObservableObject
     partial void OnStatusFilterChanged(MissionStatus? value)
     {
         OnPropertyChanged(nameof(StatusFilterDisplay));
+        ApplyQuery();
+    }
+    partial void OnInstallStatusFilterChanged(InstallStatus? value)
+    {
+        OnPropertyChanged(nameof(InstallStatusFilterDisplay));
         ApplyQuery();
     }
     partial void OnTagFilterChanged(string? value) => ApplyQuery();
@@ -108,9 +144,16 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedMissionChanged(FanMission? value)
     {
+        NotifyMissionCommandsCanExecuteChanged();
+    }
+
+    private void NotifyMissionCommandsCanExecuteChanged()
+    {
         LaunchSelectedCommand.NotifyCanExecuteChanged();
         DeleteSelectedCommand.NotifyCanExecuteChanged();
         SetSelectedStatusCommand.NotifyCanExecuteChanged();
+        InstallSelectedCommand.NotifyCanExecuteChanged();
+        UninstallSelectedCommand.NotifyCanExecuteChanged();
     }
 
     private async Task LoadAsync()
@@ -121,7 +164,7 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyQuery()
     {
-        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending);
+        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter);
         VisibleMissions.Clear();
         foreach (var mission in filtered)
             VisibleMissions.Add(mission);
@@ -164,6 +207,48 @@ public partial class MainViewModel : ObservableObject
 
         MissionStatusDates.Apply(SelectedMission, status, DateTime.Now);
         await _missionRepository.UpdateAsync(SelectedMission);
+        ApplyQuery();
+    }
+
+    private async Task InstallSelectedAsync()
+    {
+        if (SelectedMission is null || SelectedMission.InstallStatus != InstallStatus.NotInstalled || SelectedMission.ArchivePath is null)
+            return;
+
+        try
+        {
+            _archiveInstaller.Install(SelectedMission.ArchivePath, SelectedMission.FolderPath);
+            SelectedMission.InstallStatus = InstallStatus.Installed;
+            await _missionRepository.UpdateAsync(SelectedMission);
+            InstallError = null;
+        }
+        catch (Exception ex)
+        {
+            InstallError = $"Failed to install: {ex.Message}";
+        }
+
+        NotifyMissionCommandsCanExecuteChanged();
+        ApplyQuery();
+    }
+
+    private async Task UninstallSelectedAsync()
+    {
+        if (SelectedMission is null || SelectedMission.InstallStatus != InstallStatus.Installed)
+            return;
+
+        try
+        {
+            _folderDeleter.Delete(SelectedMission.FolderPath);
+            SelectedMission.InstallStatus = InstallStatus.NotInstalled;
+            await _missionRepository.UpdateAsync(SelectedMission);
+            InstallError = null;
+        }
+        catch (Exception ex)
+        {
+            InstallError = $"Failed to uninstall: {ex.Message}";
+        }
+
+        NotifyMissionCommandsCanExecuteChanged();
         ApplyQuery();
     }
 }

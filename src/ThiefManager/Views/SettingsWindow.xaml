@@ -52,6 +52,21 @@
         </DockPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+            <TextBlock Text="Thief 1 Downloads Folder"/>
+        </StackPanel>
+        <TextBlock Text="Where you save downloaded Thief 1 mission archives (.zip/.7z/.rar) before installing them. Example: C:\Users\you\Downloads"
+                   Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,16">
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief1DownloadsFolder_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <TextBox Text="{Binding Thief1DownloadsFolder}"/>
+        </DockPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
             <ui:SymbolIcon Symbol="Games24" Foreground="#FF4DB6AC" Margin="0,0,6,0"/>
             <TextBlock Text="Thief 2 FM Folder"/>
         </StackPanel>
@@ -82,6 +97,21 @@
                 </ui:Button.Icon>
             </ui:Button>
             <TextBox Text="{Binding Thief2ExePath}"/>
+        </DockPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FF4DB6AC" Margin="0,0,6,0"/>
+            <TextBlock Text="Thief 2 Downloads Folder"/>
+        </StackPanel>
+        <TextBlock Text="Where you save downloaded Thief 2 mission archives (.zip/.7z/.rar) before installing them. Example: C:\Users\you\Downloads"
+                   Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,16">
+            <ui:Button DockPanel.Dock="Right" Content="Browse..." Width="110" Margin="8,0,0,0" Click="BrowseThief2DownloadsFolder_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <TextBox Text="{Binding Thief2DownloadsFolder}"/>
         </DockPanel>
 
         <ui:Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right" Width="100" Margin="0,8,0,0">

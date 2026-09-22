@@ -19,6 +19,8 @@ public partial class ScanWindow : FluentWindow
 
         ScanThief1Button.IsEnabled = !string.IsNullOrWhiteSpace(settings.Thief1FmFolder);
         ScanThief2Button.IsEnabled = !string.IsNullOrWhiteSpace(settings.Thief2FmFolder);
+        InstallThief1DownloadsButton.IsEnabled = !string.IsNullOrWhiteSpace(settings.Thief1DownloadsFolder) && !string.IsNullOrWhiteSpace(settings.Thief1FmFolder);
+        InstallThief2DownloadsButton.IsEnabled = !string.IsNullOrWhiteSpace(settings.Thief2DownloadsFolder) && !string.IsNullOrWhiteSpace(settings.Thief2FmFolder);
     }
 
     private async void ScanThief1_Click(object sender, RoutedEventArgs e)
@@ -31,5 +33,17 @@ public partial class ScanWindow : FluentWindow
     {
         if (!string.IsNullOrWhiteSpace(_settings.Thief2FmFolder))
             await _viewModel.Scan(GameTitle.Thief2, _settings.Thief2FmFolder);
+    }
+
+    private async void InstallThief1Downloads_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.Thief1DownloadsFolder) && !string.IsNullOrWhiteSpace(_settings.Thief1FmFolder))
+            await _viewModel.ScanDownloads(GameTitle.Thief1, _settings.Thief1DownloadsFolder, _settings.Thief1FmFolder);
+    }
+
+    private async void InstallThief2Downloads_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.Thief2DownloadsFolder) && !string.IsNullOrWhiteSpace(_settings.Thief2FmFolder))
+            await _viewModel.ScanDownloads(GameTitle.Thief2, _settings.Thief2DownloadsFolder, _settings.Thief2FmFolder);
     }
 }

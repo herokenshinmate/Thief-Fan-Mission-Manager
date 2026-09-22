@@ -58,4 +58,18 @@ public class MissionQueryTests
 
         Assert.Equal(new[] { "High", "Low", "Unrated" }, result.Select(m => m.Title));
     }
+
+    [Fact]
+    public void Apply_FiltersByInstallStatus()
+    {
+        var installed = Mission("Installed", GameTitle.Thief1, MissionStatus.NotPlayed, null);
+        installed.InstallStatus = InstallStatus.Installed;
+        var notInstalled = Mission("NotInstalled", GameTitle.Thief1, MissionStatus.NotPlayed, null);
+        notInstalled.InstallStatus = InstallStatus.NotInstalled;
+        var missions = new[] { installed, notInstalled };
+
+        var result = MissionQuery.Apply(missions, null, null, null, SortField.Title, true, InstallStatus.NotInstalled);
+
+        Assert.Equal(new[] { "NotInstalled" }, result.Select(m => m.Title));
+    }
 }

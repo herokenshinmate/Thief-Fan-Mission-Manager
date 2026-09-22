@@ -14,4 +14,6 @@ public class FanMission
     public DateTime? DateStarted { get; set; }
     public DateTime? DateCompleted { get; set; }
     public string FolderPath { get; set; } = string.Empty;
+    public InstallStatus InstallStatus { get; set; } = InstallStatus.Installed;
+    public string? ArchivePath { get; set; }
 }
