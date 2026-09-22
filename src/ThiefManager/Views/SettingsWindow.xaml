@@ -11,7 +11,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Settings">
+        <ui:TitleBar Grid.Row="0" Title="Settings" FontFamily="Cambria" FontSize="15" FontWeight="SemiBold">
             <ui:TitleBar.Icon>
                 <ui:SymbolIcon Symbol="Settings24" FontSize="16"/>
             </ui:TitleBar.Icon>

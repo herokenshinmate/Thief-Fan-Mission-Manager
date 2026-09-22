@@ -16,7 +16,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Thief FM Manager">
+        <ui:TitleBar Grid.Row="0" Title="Thief FM Manager"
+                     FontFamily="Cambria" FontSize="16" FontWeight="SemiBold">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Assets/AppIcon.ico"/>
             </ui:TitleBar.Icon>
@@ -25,9 +26,9 @@
         <DockPanel Grid.Row="1" Margin="12,4,12,12">
         <Border DockPanel.Dock="Top" Background="{StaticResource ControlBackgroundBrush}"
                 BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
-                CornerRadius="6" Padding="4" Margin="0,0,0,6">
+                CornerRadius="6" Padding="2" Margin="0,0,0,6">
         <Menu Background="Transparent">
-            <MenuItem Header="_File" Padding="14,6">
+            <MenuItem Header="_File" Padding="10,3">
                 <MenuItem Header="_Settings..." Click="OpenSettings_Click">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24"/>
