@@ -109,7 +109,8 @@
         <ListView ItemsSource="{Binding VisibleMissions}"
                   SelectedItem="{Binding SelectedMission}"
                   MouseDoubleClick="MissionList_DoubleClick"
-                  MouseRightButtonUp="MissionList_MouseRightButtonUp">
+                  MouseRightButtonUp="MissionList_MouseRightButtonUp"
+                  ItemContainerStyle="{StaticResource GridViewListViewItemStyle}">
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Properties..." Click="MissionProperties_Click">

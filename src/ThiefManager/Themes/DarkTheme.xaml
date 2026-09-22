@@ -28,9 +28,38 @@
     </Style>
 
     <!-- ListViewItem's built-in Aero2 chrome ignores plain Background setters for its
-         selected/hover states, so it gets a real ControlTemplate that renders the
-         GridView columns itself. -->
+         selected/hover states, so it gets a real ControlTemplate. Plain (ItemTemplate-based)
+         ListViews use this default, ContentPresenter-based version. -->
     <Style TargetType="ListViewItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListViewItem">
+                    <Border x:Name="ItemBorder"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SelectionBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- GridView-based ListViews (columns, not a DataTemplate) need GridViewRowPresenter
+         instead of a plain ContentPresenter to actually render their columns. Apply this
+         explicitly via ItemContainerStyle on any ListView that uses <ListView.View><GridView>. -->
+    <Style x:Key="GridViewListViewItemStyle" TargetType="ListViewItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
         <Setter Property="Padding" Value="4,2"/>
