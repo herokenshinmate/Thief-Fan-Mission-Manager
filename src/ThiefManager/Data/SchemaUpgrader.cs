@@ -19,6 +19,8 @@ public static class SchemaUpgrader
         AddColumnIfMissing(connection, "FanMissions", "ArchivePath", "TEXT NULL");
         AddColumnIfMissing(connection, "Settings", "Thief1DownloadsFolder", "TEXT NULL");
         AddColumnIfMissing(connection, "Settings", "Thief2DownloadsFolder", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "ThiefGuildUrl", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "ThiefGuildLookupDismissed", "INTEGER NOT NULL DEFAULT 0");
     }
 
     private static void AddColumnIfMissing(SqliteConnection connection, string table, string column, string columnDefinition)

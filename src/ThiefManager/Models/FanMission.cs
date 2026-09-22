@@ -16,4 +16,6 @@ public class FanMission
     public string FolderPath { get; set; } = string.Empty;
     public InstallStatus InstallStatus { get; set; } = InstallStatus.Installed;
     public string? ArchivePath { get; set; }
+    public string? ThiefGuildUrl { get; set; }
+    public bool ThiefGuildLookupDismissed { get; set; }
 }

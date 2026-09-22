@@ -272,4 +272,38 @@ public class MainViewModelTests
 
         Assert.False(vm.UninstallSelectedCommand.CanExecute(null));
     }
+
+    [Fact]
+    public async Task ApplyThiefGuildMetadataAsync_FillsOnlyBlankFieldsAndPersists()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", Author = "Existing Author" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var mission = vm.VisibleMissions.Single();
+        var result = new ThiefGuildLookupResult("Scraped Author", 2020, "Church, City", "https://www.thiefguild.com/fanmissions/1/mission");
+
+        await vm.ApplyThiefGuildMetadataAsync(mission, result);
+
+        var saved = (await repo.GetAllAsync()).Single();
+        Assert.Equal("Existing Author", saved.Author);
+        Assert.Equal(2020, saved.ReleaseYear);
+        Assert.Equal("Church, City", saved.Tags);
+        Assert.Equal("https://www.thiefguild.com/fanmissions/1/mission", saved.ThiefGuildUrl);
+    }
+
+    [Fact]
+    public async Task DismissThiefGuildLookupAsync_PersistsDismissedFlag()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var mission = vm.VisibleMissions.Single();
+
+        await vm.DismissThiefGuildLookupAsync(mission);
+
+        var saved = (await repo.GetAllAsync()).Single();
+        Assert.True(saved.ThiefGuildLookupDismissed);
+    }
 }

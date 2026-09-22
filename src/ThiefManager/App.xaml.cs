@@ -36,6 +36,7 @@ public partial class App : Application
         var archiveFileReader = new ArchiveFileReader();
         var archiveInstaller = new ArchiveInstaller();
         var folderDeleter = new FolderDeleter();
+        var thiefGuildLookupService = new ThiefGuildLookupService();
 
         var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter);
         var settings = await settingsRepository.GetAsync();
@@ -59,7 +60,7 @@ public partial class App : Application
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
         GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
-        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader);
+        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService);
         MainWindow = mainWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();
