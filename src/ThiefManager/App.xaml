@@ -19,6 +19,7 @@
             <converters:GameTitleToIconSourceConverter x:Key="GameTitleToIconSourceConverter"/>
             <converters:ExePathToIconSourceConverter x:Key="ExePathToIconSourceConverter"/>
             <converters:GameFilterOptionToIconSourceConverter x:Key="GameFilterOptionToIconSourceConverter"/>
+            <converters:MissionStatusToDisplayNameConverter x:Key="MissionStatusToDisplayNameConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
