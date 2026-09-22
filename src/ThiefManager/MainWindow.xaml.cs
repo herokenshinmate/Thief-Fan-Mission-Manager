@@ -112,6 +112,12 @@ public partial class MainWindow : FluentWindow
         settingsWindow.ShowDialog();
     }
 
+    private void OpenChangelog_Click(object sender, RoutedEventArgs e) =>
+        new ChangelogWindow { Owner = this }.ShowDialog();
+
+    private void OpenAbout_Click(object sender, RoutedEventArgs e) =>
+        new AboutWindow { Owner = this }.ShowDialog();
+
     private async void OpenScan_Click(object sender, RoutedEventArgs e)
     {
         var settings = await _settingsRepository.GetAsync();
