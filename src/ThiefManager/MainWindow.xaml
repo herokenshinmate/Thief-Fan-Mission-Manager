@@ -14,6 +14,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <ui:TitleBar Grid.Row="0" Title="Thief FM Manager"
@@ -37,6 +38,18 @@
                 <MenuItem Header="_Scan for New Missions..." Click="OpenScan_Click">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="ArrowSync24"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Help" Padding="10,3">
+                <MenuItem Header="_Changelog..." Click="OpenChangelog_Click">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="DocumentBulletList24"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_About..." Click="OpenAbout_Click">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Info24"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
@@ -215,5 +228,15 @@
             </ListView.View>
         </ListView>
         </DockPanel>
+
+        <Border Grid.Row="2" Background="{StaticResource ControlBackgroundBrush}"
+                BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="0,1,0,0"
+                Padding="12,4">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right"
+                           Text="{Binding Source={x:Static local:AppVersion.Current}, StringFormat='v{0}'}"
+                           Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
     </Grid>
 </ui:FluentWindow>
