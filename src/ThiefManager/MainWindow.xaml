@@ -7,7 +7,7 @@
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Thief FM Manager" Height="600" Width="1100"
+        Title="Thief FM Manager" Height="600" Width="1100" MinHeight="500" MinWidth="900"
         Icon="pack://application:,,,/Assets/AppIcon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
     <Grid>
@@ -16,11 +16,18 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Thief FM Manager"/>
+        <ui:TitleBar Grid.Row="0" Title="Thief FM Manager">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Assets/AppIcon.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <DockPanel Grid.Row="1" Margin="12,4,12,12">
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
+        <Border DockPanel.Dock="Top" Background="{StaticResource ControlBackgroundBrush}"
+                BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
+                CornerRadius="6" Padding="4" Margin="0,0,0,6">
+        <Menu Background="Transparent">
+            <MenuItem Header="_File" Padding="14,6">
                 <MenuItem Header="_Settings..." Click="OpenSettings_Click">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24"/>
@@ -33,12 +40,22 @@
                 </MenuItem>
             </MenuItem>
         </Menu>
+        </Border>
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,8">
             <TextBlock Text="Game:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <ComboBox Width="200" Margin="0,0,12,0"
+            <ComboBox Width="220" Margin="0,0,12,0"
                       ItemsSource="{Binding GameFilterOptions}"
-                      SelectedItem="{Binding GameFilterDisplay}"/>
+                      SelectedItem="{Binding GameFilterDisplay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Games24" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0"/>
             <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -116,9 +133,38 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
-                    <GridViewColumn Header="Game" DisplayMemberBinding="{Binding Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" Width="200"/>
-                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100"/>
-                    <GridViewColumn Header="Rating" DisplayMemberBinding="{Binding Rating}" Width="60"/>
+                    <GridViewColumn Header="Game" Width="220">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Game, Converter={StaticResource GameTitleToBrushConverter}}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Status" Width="120">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding Status, Converter={StaticResource MissionStatusToIconConverter}}"
+                                                   Foreground="{Binding Status, Converter={StaticResource MissionStatusToBrushConverter}}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Status}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Rating" Width="70">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F" Margin="0,0,4,0"
+                                                   Visibility="{Binding Rating, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                    <TextBlock Text="{Binding Rating}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
