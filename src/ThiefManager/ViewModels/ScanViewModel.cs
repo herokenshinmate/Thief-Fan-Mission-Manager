@@ -13,7 +13,6 @@ public partial class ScanViewModel : ObservableObject
     private readonly IDirectoryReader _directoryReader;
     private readonly IArchiveFileReader _archiveFileReader;
     private readonly IMissionRepository _missionRepository;
-    private GameTitle _lastScannedGame;
 
     public ScanViewModel(IDirectoryReader directoryReader, IArchiveFileReader archiveFileReader, IMissionRepository missionRepository)
     {
@@ -31,7 +30,6 @@ public partial class ScanViewModel : ObservableObject
     public async Task Scan(GameTitle game, string fmFolder)
     {
         ScanError = null;
-        _lastScannedGame = game;
         var existing = await _missionRepository.GetAllAsync();
 
         IReadOnlyList<string> subfolders;
@@ -42,21 +40,19 @@ public partial class ScanViewModel : ObservableObject
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
             ScanError = $"Could not read folder: {fmFolder}";
-            Candidates.Clear();
             return;
         }
 
         var newCandidates = ScanService.FindNewCandidates(subfolders, existing.Select(m => m.FolderPath));
 
-        Candidates.Clear();
+        RemoveCandidates(c => c.Game == game && c.ArchivePath is null);
         foreach (var candidate in newCandidates)
-            Candidates.Add(new ScanCandidateViewModel(candidate.SuggestedTitle, candidate.FolderPath));
+            Candidates.Add(new ScanCandidateViewModel(game, candidate.SuggestedTitle, candidate.FolderPath));
     }
 
     public async Task ScanDownloads(GameTitle game, string downloadsFolder, string fmFolder)
     {
         ScanError = null;
-        _lastScannedGame = game;
         var existing = await _missionRepository.GetAllAsync();
 
         IReadOnlyList<string> archiveFiles;
@@ -67,16 +63,46 @@ public partial class ScanViewModel : ObservableObject
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
             ScanError = $"Could not read folder: {downloadsFolder}";
-            Candidates.Clear();
             return;
         }
 
         var existingArchivePaths = existing.Where(m => m.ArchivePath is not null).Select(m => m.ArchivePath!);
         var newCandidates = DownloadedArchiveScanner.FindNewArchives(archiveFiles, fmFolder, existingArchivePaths);
 
-        Candidates.Clear();
+        RemoveCandidates(c => c.Game == game && c.ArchivePath is not null);
         foreach (var candidate in newCandidates)
-            Candidates.Add(new ScanCandidateViewModel(candidate.SuggestedTitle, candidate.TargetFolderPath, candidate.ArchivePath));
+            Candidates.Add(new ScanCandidateViewModel(game, candidate.SuggestedTitle, candidate.TargetFolderPath, candidate.ArchivePath));
+    }
+
+    /// <summary>
+    /// Scans both games' configured Downloads folders in one pass (whichever are configured),
+    /// combining results into Candidates for a single review-and-import pass.
+    /// </summary>
+    public async Task ScanAllDownloads(AppSettings settings)
+    {
+        var errors = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(settings.Thief1DownloadsFolder) && !string.IsNullOrWhiteSpace(settings.Thief1FmFolder))
+        {
+            await ScanDownloads(GameTitle.Thief1, settings.Thief1DownloadsFolder, settings.Thief1FmFolder);
+            if (ScanError is not null)
+                errors.Add(ScanError);
+        }
+
+        if (!string.IsNullOrWhiteSpace(settings.Thief2DownloadsFolder) && !string.IsNullOrWhiteSpace(settings.Thief2FmFolder))
+        {
+            await ScanDownloads(GameTitle.Thief2, settings.Thief2DownloadsFolder, settings.Thief2FmFolder);
+            if (ScanError is not null)
+                errors.Add(ScanError);
+        }
+
+        ScanError = errors.Count > 0 ? string.Join(" ", errors) : null;
+    }
+
+    private void RemoveCandidates(Func<ScanCandidateViewModel, bool> match)
+    {
+        foreach (var candidate in Candidates.Where(match).ToList())
+            Candidates.Remove(candidate);
     }
 
     private async Task ImportSelectedAsync()
@@ -87,7 +113,7 @@ public partial class ScanViewModel : ObservableObject
             await _missionRepository.AddAsync(new FanMission
             {
                 Title = candidate.SuggestedTitle,
-                Game = _lastScannedGame,
+                Game = candidate.Game,
                 FolderPath = candidate.FolderPath,
                 ArchivePath = candidate.ArchivePath,
                 InstallStatus = candidate.ArchivePath is null ? InstallStatus.Installed : InstallStatus.NotInstalled
