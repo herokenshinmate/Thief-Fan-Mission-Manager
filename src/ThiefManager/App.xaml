@@ -18,6 +18,7 @@
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
             <converters:GameTitleToIconSourceConverter x:Key="GameTitleToIconSourceConverter"/>
             <converters:ExePathToIconSourceConverter x:Key="ExePathToIconSourceConverter"/>
+            <converters:GameFilterOptionToIconSourceConverter x:Key="GameFilterOptionToIconSourceConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

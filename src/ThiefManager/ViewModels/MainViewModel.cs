@@ -30,7 +30,13 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand DeleteSelectedCommand { get; }
     public IAsyncRelayCommand<MissionStatus> SetSelectedStatusCommand { get; }
 
-    public string[] GameFilterOptions { get; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
+    public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
+
+    public void RefreshGameIcons()
+    {
+        GameFilterOptions = GameFilterOptions.ToArray();
+        OnPropertyChanged(nameof(GameFilterOptions));
+    }
 
     public string GameFilterDisplay
     {
