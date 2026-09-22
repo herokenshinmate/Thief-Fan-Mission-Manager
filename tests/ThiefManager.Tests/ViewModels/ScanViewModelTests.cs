@@ -16,8 +16,16 @@ public class FakeDirectoryReader : IDirectoryReader
 public class FakeArchiveFileReader : IArchiveFileReader
 {
     private readonly IReadOnlyList<string> _archiveFiles;
+    private readonly Func<string, IReadOnlyList<string>>? _byFolder;
+
     public FakeArchiveFileReader(params string[] archiveFiles) => _archiveFiles = archiveFiles;
-    public IReadOnlyList<string> GetArchiveFiles(string folderPath) => _archiveFiles;
+    public FakeArchiveFileReader(Func<string, IReadOnlyList<string>> byFolder)
+    {
+        _archiveFiles = Array.Empty<string>();
+        _byFolder = byFolder;
+    }
+
+    public IReadOnlyList<string> GetArchiveFiles(string folderPath) => _byFolder?.Invoke(folderPath) ?? _archiveFiles;
 }
 
 public class ScanViewModelTests
@@ -94,5 +102,84 @@ public class ScanViewModelTests
         Assert.Equal(InstallStatus.NotInstalled, imported.InstallStatus);
         Assert.Equal(@"C:\Downloads\NewOne.zip", imported.ArchivePath);
         Assert.Equal(Path.Combine(@"C:\fms", "NewOne"), imported.FolderPath);
+    }
+
+    [Fact]
+    public async Task ScanDownloads_ForSecondGame_DoesNotClearFirstGamesCandidates()
+    {
+        var repo = new FakeMissionRepository();
+        var archiveFileReader = new FakeArchiveFileReader(folder => folder == @"C:\Downloads1"
+            ? new[] { @"C:\Downloads1\Thief1Mission.zip" }
+            : new[] { @"C:\Downloads2\Thief2Mission.zip" });
+        var vm = MakeViewModel(repo, archiveFileReader: archiveFileReader);
+
+        await vm.ScanDownloads(GameTitle.Thief1, @"C:\Downloads1", @"C:\fms1");
+        await vm.ScanDownloads(GameTitle.Thief2, @"C:\Downloads2", @"C:\fms2");
+
+        Assert.Equal(2, vm.Candidates.Count);
+        Assert.Contains(vm.Candidates, c => c.SuggestedTitle == "Thief1Mission" && c.Game == GameTitle.Thief1);
+        Assert.Contains(vm.Candidates, c => c.SuggestedTitle == "Thief2Mission" && c.Game == GameTitle.Thief2);
+    }
+
+    [Fact]
+    public async Task ImportSelectedCommand_WithCandidatesFromBothGames_TagsEachWithItsOwnGame()
+    {
+        var repo = new FakeMissionRepository();
+        var archiveFileReader = new FakeArchiveFileReader(folder => folder == @"C:\Downloads1"
+            ? new[] { @"C:\Downloads1\Thief1Mission.zip" }
+            : new[] { @"C:\Downloads2\Thief2Mission.zip" });
+        var vm = MakeViewModel(repo, archiveFileReader: archiveFileReader);
+        await vm.ScanDownloads(GameTitle.Thief1, @"C:\Downloads1", @"C:\fms1");
+        await vm.ScanDownloads(GameTitle.Thief2, @"C:\Downloads2", @"C:\fms2");
+        foreach (var candidate in vm.Candidates)
+            candidate.IsSelected = true;
+
+        await vm.ImportSelectedCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, repo.Missions.Count);
+        Assert.Contains(repo.Missions, m => m.Title == "Thief1Mission" && m.Game == GameTitle.Thief1);
+        Assert.Contains(repo.Missions, m => m.Title == "Thief2Mission" && m.Game == GameTitle.Thief2);
+    }
+
+    [Fact]
+    public async Task ScanAllDownloads_CombinesResultsFromBothConfiguredGames()
+    {
+        var repo = new FakeMissionRepository();
+        var archiveFileReader = new FakeArchiveFileReader(folder => folder == @"C:\Downloads1"
+            ? new[] { @"C:\Downloads1\Thief1Mission.zip" }
+            : new[] { @"C:\Downloads2\Thief2Mission.zip" });
+        var vm = MakeViewModel(repo, archiveFileReader: archiveFileReader);
+        var settings = new AppSettings
+        {
+            Thief1DownloadsFolder = @"C:\Downloads1",
+            Thief1FmFolder = @"C:\fms1",
+            Thief2DownloadsFolder = @"C:\Downloads2",
+            Thief2FmFolder = @"C:\fms2"
+        };
+
+        await vm.ScanAllDownloads(settings);
+
+        Assert.Equal(2, vm.Candidates.Count);
+        Assert.Contains(vm.Candidates, c => c.SuggestedTitle == "Thief1Mission" && c.Game == GameTitle.Thief1);
+        Assert.Contains(vm.Candidates, c => c.SuggestedTitle == "Thief2Mission" && c.Game == GameTitle.Thief2);
+    }
+
+    [Fact]
+    public async Task ScanAllDownloads_SkipsGamesWithoutConfiguredFolders()
+    {
+        var repo = new FakeMissionRepository();
+        var archiveFileReader = new FakeArchiveFileReader(@"C:\Downloads1\Thief1Mission.zip");
+        var vm = MakeViewModel(repo, archiveFileReader: archiveFileReader);
+        var settings = new AppSettings
+        {
+            Thief1DownloadsFolder = @"C:\Downloads1",
+            Thief1FmFolder = @"C:\fms1"
+            // Thief2 folders left unconfigured
+        };
+
+        await vm.ScanAllDownloads(settings);
+
+        var candidate = Assert.Single(vm.Candidates);
+        Assert.Equal(GameTitle.Thief1, candidate.Game);
     }
 }

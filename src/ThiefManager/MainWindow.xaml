@@ -85,6 +85,12 @@
                     <ui:SymbolIcon Symbol="Add24"/>
                 </ui:Button.Icon>
             </ui:Button>
+            <ui:Button Content="Quick Scan Downloads" Click="QuickScanDownloads_Click" Margin="0,0,8,6"
+                    ToolTip="Scan both games' configured Downloads folders for new mission archives.">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D"/>
+                </ui:Button.Icon>
+            </ui:Button>
             <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,6">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Play24"/>

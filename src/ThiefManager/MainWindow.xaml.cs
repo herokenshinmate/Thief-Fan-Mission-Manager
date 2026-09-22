@@ -114,6 +114,16 @@ public partial class MainWindow : FluentWindow
         scanWindow.ShowDialog();
     }
 
+    private async void QuickScanDownloads_Click(object sender, RoutedEventArgs e)
+    {
+        var settings = await _settingsRepository.GetAsync();
+        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository);
+        var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
+        await scanViewModel.ScanAllDownloads(settings);
+        scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
+        scanWindow.ShowDialog();
+    }
+
     private async void Uninstall_Click(object sender, RoutedEventArgs e)
     {
         var mission = _viewModel.SelectedMission;
