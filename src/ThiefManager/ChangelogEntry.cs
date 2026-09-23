@@ -7,6 +7,32 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.6.0", "2026-09-24", new[]
+        {
+            "Added a Tags column to the mission list, showing each tag as a chip; it fills the remaining table width without wrapping or requiring horizontal scrolling.",
+            "Removed the empty space above the mission list that showed even when there was no error to display.",
+            "Fixed the menu bar rendering much taller than its text."
+        }),
+        new("3.5.1", "2026-09-24", new[]
+        {
+            "Fixed Thief Guild metadata lookups picking up a screenshot uploader's name instead of the mission's actual credited author.",
+            "Fixed the automatic Thief Guild lookup failing to find a mission when the search has exactly one match (Thief Guild redirects straight to the mission page instead of a results list)."
+        }),
+        new("3.5.0", "2026-09-24", new[]
+        {
+            "Added a Thief Guild menu item that opens thiefguild.com in your browser."
+        }),
+        new("3.4.1", "2026-09-24", new[]
+        {
+            "Widened the Properties dialog and reorganized its fields into a two-column layout that no longer needs scrolling.",
+            "Fixed the Properties dialog leaving a large gap between the fields and the Save button.",
+            "Fixed the Fetch Metadata button's text being clipped."
+        }),
+        new("3.4.0", "2026-09-24", new[]
+        {
+            "The Scan window now ignores folders that are already cataloged and any folder starting with a dot (e.g. \".fmsel.cache\").",
+            "The Scan window now automatically scans both games' FM and Downloads folders on open, grouping results into collapsible, themed sections; replaced the manual scan buttons with a single Refresh button; and widened the window."
+        }),
         new("3.3.0", "2026-09-22", new[]
         {
             "Added a status bar at the bottom of the main window showing the app version.",

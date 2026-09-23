@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -39,6 +40,45 @@ public partial class MainWindow : FluentWindow
         _thiefGuildLookupService = thiefGuildLookupService;
         DataContext = _viewModel;
         Loaded += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
+        Loaded += (_, _) => ResizeTagsColumn();
+    }
+
+    private ScrollViewer? _missionListScrollViewer;
+
+    private void MissionListView_SizeChanged(object sender, SizeChangedEventArgs e) => ResizeTagsColumn();
+
+    private void ResizeTagsColumn()
+    {
+        if (MissionListView.View is not System.Windows.Controls.GridView gridView)
+            return;
+
+        _missionListScrollViewer ??= FindVisualChild<ScrollViewer>(MissionListView);
+        double availableWidth = _missionListScrollViewer?.ViewportWidth ?? MissionListView.ActualWidth;
+        if (availableWidth <= 0)
+            return;
+
+        double otherColumnsWidth = 0;
+        foreach (var column in gridView.Columns)
+        {
+            if (column != TagsColumn)
+                otherColumnsWidth += column.Width;
+        }
+
+        TagsColumn.Width = Math.Max(150, availableWidth - otherColumnsWidth - 2);
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typed)
+                return typed;
+
+            if (FindVisualChild<T>(child) is { } found)
+                return found;
+        }
+        return null;
     }
 
     private void AddMission_Click(object sender, RoutedEventArgs e)
@@ -118,6 +158,9 @@ public partial class MainWindow : FluentWindow
     private void OpenAbout_Click(object sender, RoutedEventArgs e) =>
         new AboutWindow { Owner = this }.ShowDialog();
 
+    private void OpenThiefGuild_Click(object sender, RoutedEventArgs e) =>
+        Process.Start(new ProcessStartInfo("https://www.thiefguild.com") { UseShellExecute = true });
+
     private async void OpenScan_Click(object sender, RoutedEventArgs e)
     {
         var settings = await _settingsRepository.GetAsync();
@@ -132,7 +175,6 @@ public partial class MainWindow : FluentWindow
         var settings = await _settingsRepository.GetAsync();
         var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository);
         var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
-        await scanViewModel.ScanAllDownloads(settings);
         scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
         scanWindow.ShowDialog();
     }

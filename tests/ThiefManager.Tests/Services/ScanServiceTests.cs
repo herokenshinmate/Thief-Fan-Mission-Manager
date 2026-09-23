@@ -42,4 +42,19 @@ public class ScanServiceTests
 
         Assert.Equal("MissionC", Assert.Single(result).SuggestedTitle);
     }
+
+    [Fact]
+    public void FindNewCandidates_ExcludesFoldersStartingWithDot()
+    {
+        var subfolders = new[]
+        {
+            @"C:\fms\.fmsel.cache",
+            @"C:\fms\MissionA"
+        };
+
+        var result = ScanService.FindNewCandidates(subfolders, Array.Empty<string>());
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(@"C:\fms\MissionA", candidate.FolderPath);
+    }
 }

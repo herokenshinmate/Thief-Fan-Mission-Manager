@@ -20,4 +20,8 @@ public partial class ScanCandidateViewModel : ObservableObject
     [ObservableProperty] private bool isSelected;
 
     public string? ArchivePath { get; }
+
+    public bool IsDownload => ArchivePath is not null;
+
+    public ScanGroupKey GroupKey => new(Game, IsDownload);
 }
