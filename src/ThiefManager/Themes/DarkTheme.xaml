@@ -21,6 +21,53 @@
     <SolidColorBrush x:Key="MutedForegroundBrush" Color="{StaticResource MutedForegroundColor}"/>
     <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}"/>
 
+    <!-- WPF-UI's implicit MenuItem style enforces its own generous top-level header padding
+         regardless of the Padding set here, producing a menu bar much taller than its text.
+         Give top-level menu bar items (File/Help/...) an explicit, compact template instead. -->
+    <Style x:Key="CompactTopLevelMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}" CornerRadius="4"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <ContentPresenter x:Name="IconPresenter" ContentSource="Icon"
+                                                  Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                                                  VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True"
+                                   Focusable="False" PopupAnimation="Fade"
+                                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="{StaticResource PanelBackgroundBrush}"
+                                        BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
+                                        CornerRadius="6" Padding="4" MinWidth="160">
+                                    <StackPanel IsItemsHost="True"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSubmenuOpen" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="ListView">
         <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>

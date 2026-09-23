@@ -3,12 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Mission" Height="700" Width="520" MinHeight="600" MinWidth="480"
+        Title="Mission" Width="920" SizeToContent="Height" MinHeight="480" MinWidth="820"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <ui:TitleBar Grid.Row="0" Title="Mission" FontFamily="Cambria" FontSize="15" FontWeight="SemiBold">
@@ -17,114 +17,138 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="16">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="TextField24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
-                <TextBlock Text="Title"/>
-            </StackPanel>
-            <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+        <StackPanel Grid.Row="1" Margin="16">
+            <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Games24" Foreground="#FF9575CD" Margin="0,0,6,0"/>
-                <TextBlock Text="Game"/>
-            </StackPanel>
-            <ComboBox SelectedItem="{Binding Game}" Margin="0,0,0,10">
-                <ComboBox.ItemsSource>
-                    <x:Array Type="{x:Type models:GameTitle}">
-                        <models:GameTitle>Thief1</models:GameTitle>
-                        <models:GameTitle>Thief2</models:GameTitle>
-                    </x:Array>
-                </ComboBox.ItemsSource>
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Grid Width="20" Height="20" Margin="0,0,6,0">
-                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Converter={StaticResource GameTitleToBrushConverter}}"/>
-                                <Image Source="{Binding Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
-                            </Grid>
-                            <TextBlock Text="{Binding Converter={StaticResource GameTitleToDisplayNameConverter}}"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="TextField24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+                        <TextBlock Text="Title"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Person24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
-                <TextBlock Text="Author"/>
-            </StackPanel>
-            <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Games24" Foreground="#FF9575CD" Margin="0,0,6,0"/>
+                        <TextBlock Text="Game"/>
+                    </StackPanel>
+                    <ComboBox SelectedItem="{Binding Game}" Margin="0,0,0,10">
+                        <ComboBox.ItemsSource>
+                            <x:Array Type="{x:Type models:GameTitle}">
+                                <models:GameTitle>Thief1</models:GameTitle>
+                                <models:GameTitle>Thief2</models:GameTitle>
+                            </x:Array>
+                        </ComboBox.ItemsSource>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Grid Width="20" Height="20" Margin="0,0,6,0">
+                                        <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Converter={StaticResource GameTitleToBrushConverter}}"/>
+                                        <Image Source="{Binding Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding Converter={StaticResource GameTitleToDisplayNameConverter}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="CalendarLtr24" Foreground="#FFFFB74D" Margin="0,0,6,0"/>
-                <TextBlock Text="Release Year"/>
-            </StackPanel>
-            <TextBox Text="{Binding ReleaseYear, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Person24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
+                        <TextBlock Text="Author"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,6,0"/>
-                <TextBlock Text="Status"/>
-            </StackPanel>
-            <ComboBox SelectedItem="{Binding Status}" Margin="0,0,0,10">
-                <ComboBox.ItemsSource>
-                    <x:Array Type="{x:Type models:MissionStatus}">
-                        <models:MissionStatus>NotPlayed</models:MissionStatus>
-                        <models:MissionStatus>InProgress</models:MissionStatus>
-                        <models:MissionStatus>Completed</models:MissionStatus>
-                        <models:MissionStatus>Abandoned</models:MissionStatus>
-                    </x:Array>
-                </ComboBox.ItemsSource>
-                <ComboBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type models:MissionStatus}">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="{Binding Converter={StaticResource MissionStatusToIconConverter}}"
-                                           Foreground="{Binding Converter={StaticResource MissionStatusToBrushConverter}}"
-                                           Margin="0,0,6,0"/>
-                            <TextBlock Text="{Binding Converter={StaticResource MissionStatusToDisplayNameConverter}}"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="CalendarLtr24" Foreground="#FFFFB74D" Margin="0,0,6,0"/>
+                        <TextBlock Text="Release Year"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding ReleaseYear, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                </StackPanel>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F" Margin="0,0,6,0"/>
-                <TextBlock Text="Rating"/>
-            </StackPanel>
-            <ComboBox ItemsSource="{Binding RatingOptions}" SelectedItem="{Binding RatingDisplay}" Margin="0,0,0,10"/>
+                <StackPanel Grid.Column="2">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,6,0"/>
+                        <TextBlock Text="Status"/>
+                    </StackPanel>
+                    <ComboBox SelectedItem="{Binding Status}" Margin="0,0,0,10">
+                        <ComboBox.ItemsSource>
+                            <x:Array Type="{x:Type models:MissionStatus}">
+                                <models:MissionStatus>NotPlayed</models:MissionStatus>
+                                <models:MissionStatus>InProgress</models:MissionStatus>
+                                <models:MissionStatus>Completed</models:MissionStatus>
+                                <models:MissionStatus>Abandoned</models:MissionStatus>
+                            </x:Array>
+                        </ComboBox.ItemsSource>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:MissionStatus}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding Converter={StaticResource MissionStatusToIconConverter}}"
+                                                   Foreground="{Binding Converter={StaticResource MissionStatusToBrushConverter}}"
+                                                   Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Converter={StaticResource MissionStatusToDisplayNameConverter}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,6,0"/>
-                <TextBlock Text="Tags"/>
-            </StackPanel>
-            <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F" Margin="0,0,6,0"/>
+                        <TextBlock Text="Rating"/>
+                    </StackPanel>
+                    <ComboBox ItemsSource="{Binding RatingOptions}" SelectedItem="{Binding RatingDisplay}" Margin="0,0,0,10"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,6,0"/>
+                        <TextBlock Text="Tags"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="Folder24" Foreground="#FFA1887F" Margin="0,0,6,0"/>
+                        <TextBlock Text="Folder Path"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                </StackPanel>
+            </Grid>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <ui:SymbolIcon Symbol="Notepad24" Foreground="#FF4DD0E1" Margin="0,0,6,0"/>
                 <TextBlock Text="Notes"/>
             </StackPanel>
-            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="60" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" Height="55" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Dates are set automatically based on Status." Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" Margin="0,0,0,6"/>
-
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="CalendarArrowRight24" Foreground="{StaticResource MutedForegroundBrush}" Margin="0,0,6,0"/>
-                <TextBlock Text="Date Started"/>
-            </StackPanel>
-            <TextBlock Text="{Binding DateStarted, StringFormat=d, TargetNullValue='—'}"
-                       Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,10"/>
-
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="CalendarCheckmark24" Foreground="{StaticResource MutedForegroundBrush}" Margin="0,0,6,0"/>
-                <TextBlock Text="Date Completed"/>
-            </StackPanel>
-            <TextBlock Text="{Binding DateCompleted, StringFormat=d, TargetNullValue='—'}"
-                       Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,10"/>
-
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <ui:SymbolIcon Symbol="Folder24" Foreground="#FFA1887F" Margin="0,0,6,0"/>
-                <TextBlock Text="Folder Path"/>
-            </StackPanel>
-            <TextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="CalendarArrowRight24" Foreground="{StaticResource MutedForegroundBrush}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Date Started"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding DateStarted, StringFormat=d, TargetNullValue='—'}"
+                               Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="CalendarCheckmark24" Foreground="{StaticResource MutedForegroundBrush}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Date Completed"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding DateCompleted, StringFormat=d, TargetNullValue='—'}"
+                               Foreground="{StaticResource MutedForegroundBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4" VerticalAlignment="Bottom">
+                    <TextBlock Text="Dates are set automatically based on Status." Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
@@ -133,14 +157,14 @@
             <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, and tags. Leave blank and click Fetch to search by title instead."
                        Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
             <DockPanel Margin="0,0,0,4">
-                <ui:Button DockPanel.Dock="Right" Content="Fetch Metadata" Command="{Binding FetchThiefGuildMetadataCommand}" Width="140" Margin="8,0,0,0">
+                <ui:Button DockPanel.Dock="Right" Content="Fetch Metadata" Command="{Binding FetchThiefGuildMetadataCommand}" Padding="14,6" Margin="8,0,0,0">
                     <ui:Button.Icon>
                         <ui:SymbolIcon Symbol="ArrowDownload24"/>
                     </ui:Button.Icon>
                 </ui:Button>
                 <TextBox Text="{Binding ThiefGuildUrl, UpdateSourceTrigger=PropertyChanged}"/>
             </DockPanel>
-            <TextBlock Text="{Binding ThiefGuildLookupStatus}" Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+            <TextBlock Text="{Binding ThiefGuildLookupStatus}" Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
             <ui:Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Right">
                 <ui:Button.Icon>
@@ -148,6 +172,5 @@
                 </ui:Button.Icon>
             </ui:Button>
         </StackPanel>
-        </ScrollViewer>
     </Grid>
 </ui:FluentWindow>

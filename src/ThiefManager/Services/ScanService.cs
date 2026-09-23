@@ -15,6 +15,7 @@ public static class ScanService
 
         return subfolderPaths
             .Where(path => !existing.Contains(path))
+            .Where(path => !IsDotFolder(path))
             .Select(path =>
             {
                 var trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -22,5 +23,11 @@ public static class ScanService
                 return new ScanCandidate(title, path);
             })
             .ToList();
+    }
+
+    private static bool IsDotFolder(string path)
+    {
+        var trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return Path.GetFileName(trimmed).StartsWith('.');
     }
 }

@@ -99,6 +99,50 @@ public partial class ScanViewModel : ObservableObject
         ScanError = errors.Count > 0 ? string.Join(" ", errors) : null;
     }
 
+    /// <summary>
+    /// Scans both games' configured FM folders in one pass (whichever are configured),
+    /// combining results into Candidates for a single review-and-import pass.
+    /// </summary>
+    public async Task ScanAllInstalled(AppSettings settings)
+    {
+        var errors = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(settings.Thief1FmFolder))
+        {
+            await Scan(GameTitle.Thief1, settings.Thief1FmFolder);
+            if (ScanError is not null)
+                errors.Add(ScanError);
+        }
+
+        if (!string.IsNullOrWhiteSpace(settings.Thief2FmFolder))
+        {
+            await Scan(GameTitle.Thief2, settings.Thief2FmFolder);
+            if (ScanError is not null)
+                errors.Add(ScanError);
+        }
+
+        ScanError = errors.Count > 0 ? string.Join(" ", errors) : null;
+    }
+
+    /// <summary>
+    /// Scans everything configured for both games in one pass: FM folders for missions not yet
+    /// cataloged, and Downloads folders for archives not yet installed.
+    /// </summary>
+    public async Task RefreshAsync(AppSettings settings)
+    {
+        var errors = new List<string>();
+
+        await ScanAllInstalled(settings);
+        if (ScanError is not null)
+            errors.Add(ScanError);
+
+        await ScanAllDownloads(settings);
+        if (ScanError is not null)
+            errors.Add(ScanError);
+
+        ScanError = errors.Count > 0 ? string.Join(" ", errors) : null;
+    }
+
     private void RemoveCandidates(Func<ScanCandidateViewModel, bool> match)
     {
         foreach (var candidate in Candidates.Where(match).ToList())

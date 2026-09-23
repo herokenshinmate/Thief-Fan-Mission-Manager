@@ -29,7 +29,7 @@
                 BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
                 CornerRadius="6" Padding="2" Margin="0,0,0,6">
         <Menu Background="Transparent">
-            <MenuItem Header="_File" Padding="10,3">
+            <MenuItem Header="_File" Style="{StaticResource CompactTopLevelMenuItemStyle}">
                 <MenuItem Header="_Settings..." Click="OpenSettings_Click">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24"/>
@@ -41,7 +41,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="_Help" Padding="10,3">
+            <MenuItem Header="_Help" Style="{StaticResource CompactTopLevelMenuItemStyle}">
                 <MenuItem Header="_Changelog..." Click="OpenChangelog_Click">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="DocumentBulletList24"/>
@@ -52,6 +52,12 @@
                         <ui:SymbolIcon Symbol="Info24"/>
                     </MenuItem.Icon>
                 </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Thief Guild" Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenThiefGuild_Click"
+                    ToolTip="Open thiefguild.com in your browser.">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Globe24"/>
+                </MenuItem.Icon>
             </MenuItem>
         </Menu>
         </Border>
@@ -116,13 +122,17 @@
             </ui:Button>
         </WrapPanel>
 
-        <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"/>
-        <TextBlock DockPanel.Dock="Top" Text="{Binding InstallError}" Foreground="Red" Margin="0,0,0,8"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding LaunchError}" Foreground="Red" Margin="0,0,0,8"
+                   Visibility="{Binding LaunchError, Converter={StaticResource NullToVisibilityConverter}}"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding InstallError}" Foreground="Red" Margin="0,0,0,8"
+                   Visibility="{Binding InstallError, Converter={StaticResource NullToVisibilityConverter}}"/>
 
-        <ListView ItemsSource="{Binding VisibleMissions}"
+        <ListView x:Name="MissionListView" ItemsSource="{Binding VisibleMissions}"
                   SelectedItem="{Binding SelectedMission}"
                   MouseDoubleClick="MissionList_DoubleClick"
                   MouseRightButtonUp="MissionList_MouseRightButtonUp"
+                  SizeChanged="MissionListView_SizeChanged"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   ItemContainerStyle="{StaticResource GridViewListViewItemStyle}">
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
@@ -221,6 +231,29 @@
                                                    Visibility="{Binding Rating, Converter={StaticResource NullToVisibilityConverter}}"/>
                                     <TextBlock Text="{Binding Rating}" VerticalAlignment="Center"/>
                                 </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="TagsColumn" Header="Tags" Width="320">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ItemsControl ItemsSource="{Binding Tags, Converter={StaticResource StringToTagListConverter}}"
+                                              ClipToBounds="True">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{StaticResource ControlBackgroundBrush}"
+                                                    BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
+                                                    CornerRadius="9" Padding="7,1" Margin="0,2,4,2">
+                                                <TextBlock Text="{Binding}" FontSize="11" TextWrapping="NoWrap"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
