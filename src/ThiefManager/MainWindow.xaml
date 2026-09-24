@@ -29,29 +29,30 @@
                 BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
                 CornerRadius="6" Padding="2" Margin="0,0,0,6">
         <Menu Background="Transparent">
-            <MenuItem Header="_File" Style="{StaticResource CompactTopLevelMenuItemStyle}">
-                <MenuItem Header="_Settings..." Click="OpenSettings_Click">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Settings24"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_Scan for New Missions..." Click="OpenScan_Click">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="ArrowSync24"/>
-                    </MenuItem.Icon>
-                </MenuItem>
+            <MenuItem Header="_Settings..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenSettings_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Settings24"/>
+                </MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="_Help" Style="{StaticResource CompactTopLevelMenuItemStyle}">
-                <MenuItem Header="_Changelog..." Click="OpenChangelog_Click">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="DocumentBulletList24"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_About..." Click="OpenAbout_Click">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Info24"/>
-                    </MenuItem.Icon>
-                </MenuItem>
+            <MenuItem Header="_Scan for New Missions..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenScan_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="_Ignore List..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenIgnoreList_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="EyeOff24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="_Changelog" Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenChangelog_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="DocumentBulletList24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="_About" Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenAbout_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Info24"/>
+                </MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="_Thief Guild" Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenThiefGuild_Click"
                     ToolTip="Open thiefguild.com in your browser.">
@@ -83,6 +84,9 @@
             <ui:SymbolIcon Symbol="Tag24" Foreground="#FFBA68C8" Margin="0,0,4,6" VerticalAlignment="Center"/>
             <TextBlock Text="Tag:" VerticalAlignment="Center" Margin="0,0,4,6"/>
             <TextBox Width="120" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,6"/>
+            <ui:SymbolIcon Symbol="Person24" Foreground="#FF4FC3F7" Margin="0,0,4,6" VerticalAlignment="Center"/>
+            <TextBlock Text="Author:" VerticalAlignment="Center" Margin="0,0,4,6"/>
+            <TextBox Width="140" Text="{Binding AuthorFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,6"/>
             <ui:SymbolIcon Symbol="Flag24" Foreground="#FF81C784" Margin="0,0,4,6" VerticalAlignment="Center"/>
             <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,6"/>
             <ComboBox Width="100" Margin="0,0,12,6"
@@ -133,7 +137,8 @@
                   MouseRightButtonUp="MissionList_MouseRightButtonUp"
                   SizeChanged="MissionListView_SizeChanged"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  ItemContainerStyle="{StaticResource GridViewListViewItemStyle}">
+                  ItemContainerStyle="{StaticResource GridViewListViewItemStyle}"
+                  GridViewColumnHeader.Click="MissionListView_ColumnHeaderClick">
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Properties..." Click="MissionProperties_Click">
@@ -187,8 +192,8 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
-                    <GridViewColumn Header="Game" Width="220">
+                    <GridViewColumn x:Name="TitleColumn" Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
+                    <GridViewColumn x:Name="GameColumn" Header="Game" Width="220">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -201,7 +206,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="Status" Width="120">
+                    <GridViewColumn x:Name="StatusColumn" Header="Status" Width="120">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -212,7 +217,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="Install Status" Width="130">
+                    <GridViewColumn x:Name="InstallStatusColumn" Header="Install Status" Width="130">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -223,7 +228,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="Rating" Width="70">
+                    <GridViewColumn x:Name="RatingColumn" Header="Rating" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -234,6 +239,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn x:Name="AuthorColumn" Header="Author" DisplayMemberBinding="{Binding Author}" Width="160"/>
                     <GridViewColumn x:Name="TagsColumn" Header="Tags" Width="320">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

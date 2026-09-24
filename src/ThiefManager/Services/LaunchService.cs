@@ -11,14 +11,16 @@ public class LaunchService
         _fileExistsChecker = fileExistsChecker;
     }
 
-    public LaunchResult Launch(string? exePath)
+    public LaunchResult Launch(string? exePath, string? fmFolderName = null)
     {
         if (string.IsNullOrWhiteSpace(exePath) || !_fileExistsChecker.Exists(exePath))
             return LaunchResult.Failure("No valid executable is configured for this game. Set it in Settings.");
 
+        var arguments = string.IsNullOrWhiteSpace(fmFolderName) ? null : $"-fm=\"{fmFolderName}\"";
+
         try
         {
-            _launcher.Start(exePath);
+            _launcher.Start(exePath, arguments);
         }
         catch (Exception ex)
         {

@@ -14,7 +14,12 @@ public class MainViewModelTests
     private class RecordingProcessLauncher : IProcessLauncher
     {
         public string? LastStartedPath;
-        public void Start(string exePath) => LastStartedPath = exePath;
+        public string? LastArguments;
+        public void Start(string exePath, string? arguments = null)
+        {
+            LastStartedPath = exePath;
+            LastArguments = arguments;
+        }
     }
 
     private class StubFileExistsChecker : IFileExistsChecker
@@ -68,10 +73,26 @@ public class MainViewModelTests
         await repo.AddAsync(new FanMission { Title = "Z", Game = GameTitle.Thief1, FolderPath = "p1" });
         await repo.AddAsync(new FanMission { Title = "A", Game = GameTitle.Thief1, FolderPath = "p2" });
         var vm = MakeViewModel(repo);
+        vm.SortField = SortField.Title;
 
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.Equal(new[] { "A", "Z" }, vm.VisibleMissions.Select(m => m.Title));
+    }
+
+    [Fact]
+    public async Task LoadCommand_DefaultsToSortingByGameWithThief1First()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "T2 Mission", Game = GameTitle.Thief2, FolderPath = "p1" });
+        await repo.AddAsync(new FanMission { Title = "T1 Mission", Game = GameTitle.Thief1, FolderPath = "p2" });
+        var vm = MakeViewModel(repo);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal(SortField.Game, vm.SortField);
+        Assert.True(vm.SortAscending);
+        Assert.Equal(new[] { "T1 Mission", "T2 Mission" }, vm.VisibleMissions.Select(m => m.Title));
     }
 
     [Fact]

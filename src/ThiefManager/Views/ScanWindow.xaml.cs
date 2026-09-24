@@ -1,6 +1,9 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
 using ThiefManager.Models;
 using ThiefManager.ViewModels;
 using Wpf.Ui.Controls;
@@ -30,4 +33,27 @@ public partial class ScanWindow : FluentWindow
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) =>
         await _viewModel.RefreshAsync(_settings);
+
+    private void CandidatesListView_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && FindAncestor<System.Windows.Controls.ListViewItem>(source) is { } item)
+            item.IsSelected = true;
+    }
+
+    private async void IgnoreCandidate_Click(object sender, RoutedEventArgs e)
+    {
+        if (CandidatesListView.SelectedItem is ScanCandidateViewModel candidate)
+            await _viewModel.IgnoreCandidateCommand.ExecuteAsync(candidate);
+    }
+
+    private static T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return null;
+    }
 }

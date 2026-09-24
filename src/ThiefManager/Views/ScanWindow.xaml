@@ -41,7 +41,18 @@
 
         <ListView x:Name="CandidatesListView" BorderThickness="0" Background="Transparent"
                   VirtualizingPanel.IsVirtualizing="False"
-                  ScrollViewer.CanContentScroll="False">
+                  ScrollViewer.CanContentScroll="False"
+                  MouseRightButtonUp="CandidatesListView_MouseRightButtonUp">
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Ignore" Click="IgnoreCandidate_Click"
+                            ToolTip="Hide this mission from future scans until removed from the Ignore List.">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="EyeOff24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>

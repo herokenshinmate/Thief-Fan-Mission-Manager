@@ -21,6 +21,30 @@ public static class SchemaUpgrader
         AddColumnIfMissing(connection, "Settings", "Thief2DownloadsFolder", "TEXT NULL");
         AddColumnIfMissing(connection, "FanMissions", "ThiefGuildUrl", "TEXT NULL");
         AddColumnIfMissing(connection, "FanMissions", "ThiefGuildLookupDismissed", "INTEGER NOT NULL DEFAULT 0");
+
+        CreateTableIfMissing(connection, "IgnoredFms", """
+            CREATE TABLE "IgnoredFms" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_IgnoredFms" PRIMARY KEY AUTOINCREMENT,
+                "Game" INTEGER NOT NULL,
+                "Name" TEXT NOT NULL,
+                "IgnoredAt" TEXT NOT NULL
+            )
+            """);
+    }
+
+    private static void CreateTableIfMissing(SqliteConnection connection, string table, string createTableSql)
+    {
+        using (var checkCommand = connection.CreateCommand())
+        {
+            checkCommand.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name=$table";
+            checkCommand.Parameters.AddWithValue("$table", table);
+            if (checkCommand.ExecuteScalar() is not null)
+                return;
+        }
+
+        using var createCommand = connection.CreateCommand();
+        createCommand.CommandText = createTableSql;
+        createCommand.ExecuteNonQuery();
     }
 
     private static void AddColumnIfMissing(SqliteConnection connection, string table, string column, string columnDefinition)

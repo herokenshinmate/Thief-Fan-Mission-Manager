@@ -27,22 +27,31 @@ public static class ThiefGuildPageParser
     }
 
     /// <summary>
-    /// The mission detail page lists the credited author under an "Author" heading, linking to
-    /// /user/&lt;id&gt;/&lt;name&gt;. Earlier /user/ links on that same page (screenshot and video
+    /// The mission detail page lists the credited author(s) under an "Author"/"Authors" heading,
+    /// each linking to /user/&lt;id&gt;/&lt;name&gt; followed by a "Missions" button linking to
+    /// /fanmissions?author=... . Earlier /user/ links on that same page (screenshot and video
     /// uploader credits) are unrelated, so the heading must be located first rather than picking
-    /// the first /user/ link in document order. Search result cards instead link the author from
-    /// "by &lt;a href="?author=..."&gt;", or list plain text ("N authors") for missions with several
-    /// credited authors, in which case no author can be determined.
+    /// the first /user/ link in document order, and every /user/ link under that heading is
+    /// collected so co-authored missions credit all of them instead of just the first. Search
+    /// result cards instead link each author from "by &lt;a href="?author=..."&gt;", or list plain
+    /// text ("N authors") for missions with several credited authors, in which case no author can
+    /// be determined.
     /// </summary>
     private static string? ExtractAuthor(IParentNode scope)
     {
         var authorHeading = scope.QuerySelectorAll("h4")
-            .FirstOrDefault(h => h.TextContent.Trim().Equals("Author", StringComparison.OrdinalIgnoreCase));
-        var authorLink = authorHeading?.ParentElement?.QuerySelector("a[href^='/user/']")
-            ?? scope.QuerySelector("a[href*='?author=']");
+            .FirstOrDefault(h => h.TextContent.Trim().StartsWith("Author", StringComparison.OrdinalIgnoreCase));
 
-        var author = authorLink?.TextContent.Trim();
-        return string.IsNullOrWhiteSpace(author) ? null : author;
+        var authorLinks = authorHeading?.ParentElement?.QuerySelectorAll("a[href^='/user/']")
+            ?? scope.QuerySelectorAll("a[href*='?author=']");
+
+        var names = authorLinks
+            .Select(a => a.TextContent.Trim())
+            .Where(name => name.Length > 0)
+            .Distinct()
+            .ToList();
+
+        return names.Count > 0 ? string.Join(", ", names) : null;
     }
 
     /// <summary>

@@ -5,5 +5,8 @@ public enum SortField
     Title,
     Game,
     Status,
-    Rating
+    InstallStatus,
+    Rating,
+    Author,
+    Tags
 }

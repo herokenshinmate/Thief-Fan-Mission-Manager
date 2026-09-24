@@ -7,6 +7,49 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.0", "2026-09-24", new[]
+        {
+            "The mission list now defaults to sorting by Game (Thief 1 first) instead of Title.",
+            "Column headers in the mission list are now clickable to sort by that column; click again to reverse the direction. The active column shows a ▲/▼ arrow."
+        }),
+        new("3.8.0", "2026-09-24", new[]
+        {
+            "Added an Author column to the mission list (before Tags), and an Author filter in the toolbar that matches any credited co-author."
+        }),
+        new("3.7.2", "2026-09-24", new[]
+        {
+            "Fixed Thief Guild metadata lookups crediting a co-authored mission's \"Missions\" button as the author (e.g. \"Missions\" instead of the actual authors) instead of crediting every listed co-author."
+        }),
+        new("3.7.1", "2026-09-24", new[]
+        {
+            "Removed the File menu; Settings, Scan for New Missions, and Ignore List are now top-level menu items alongside Changelog, About, and Thief Guild."
+        }),
+        new("3.7.0", "2026-09-24", new[]
+        {
+            "Added an ignore list: right-click a Scan result and choose Ignore to hide it (and any similarly-named duplicates) from future scans.",
+            "Added File > Ignore List... to view everything you've ignored and remove entries so they show up in scans again."
+        }),
+        new("3.6.5", "2026-09-24", new[]
+        {
+            "The Downloads scan now recognizes an archive as already installed even when its filename differs from the mission's name by casing, punctuation, a version tag (e.g. \"_v2\"), or a bracketed note (e.g. \"(fixed)\"), instead of only matching the exact archive file used to install it."
+        }),
+        new("3.6.4", "2026-09-24", new[]
+        {
+            "Removed the trailing \"...\" from the Changelog and About menu items."
+        }),
+        new("3.6.3", "2026-09-24", new[]
+        {
+            "The menu bar's top-level items (File/Changelog/About/Thief Guild) now show a gold outline and fill on hover, matching the app's accent color, instead of blending invisibly into the toolbar background."
+        }),
+        new("3.6.2", "2026-09-24", new[]
+        {
+            "Fixed the Play button opening FMSel's mission picker instead of loading the selected mission directly; it now passes -fm=<mission folder> to the game so it jumps straight in.",
+            "Fixed the game process not being given a working directory, which could cause it to fail to start."
+        }),
+        new("3.6.1", "2026-09-24", new[]
+        {
+            "Removed the Help menu; Changelog and About are now top-level menu items."
+        }),
         new("3.6.0", "2026-09-24", new[]
         {
             "Added a Tags column to the mission list, showing each tag as a chip; it fills the remaining table width without wrapping or requiring horizontal scrolling.",

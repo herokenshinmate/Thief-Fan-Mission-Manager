@@ -33,8 +33,9 @@ public class ScanViewModelTests
     private static ScanViewModel MakeViewModel(
         FakeMissionRepository repo,
         IDirectoryReader? directoryReader = null,
-        IArchiveFileReader? archiveFileReader = null) =>
-        new(directoryReader ?? new FakeDirectoryReader(), archiveFileReader ?? new FakeArchiveFileReader(), repo);
+        IArchiveFileReader? archiveFileReader = null,
+        FakeIgnoredFmRepository? ignoredFmRepository = null) =>
+        new(directoryReader ?? new FakeDirectoryReader(), archiveFileReader ?? new FakeArchiveFileReader(), repo, ignoredFmRepository ?? new FakeIgnoredFmRepository());
 
     [Fact]
     public async Task Scan_PopulatesCandidatesExcludingAlreadyCatalogedFolders()
@@ -181,5 +182,54 @@ public class ScanViewModelTests
 
         var candidate = Assert.Single(vm.Candidates);
         Assert.Equal(GameTitle.Thief1, candidate.Game);
+    }
+
+    [Fact]
+    public async Task Scan_ExcludesFoldersMatchingAnIgnoredName()
+    {
+        var repo = new FakeMissionRepository();
+        var ignoredFmRepository = new FakeIgnoredFmRepository();
+        await ignoredFmRepository.AddAsync(GameTitle.Thief1, "Ignored Mission");
+        var directoryReader = new FakeDirectoryReader(@"C:\fms\Ignored_Mission_v2", @"C:\fms\NewOne");
+        var vm = MakeViewModel(repo, directoryReader: directoryReader, ignoredFmRepository: ignoredFmRepository);
+
+        await vm.Scan(GameTitle.Thief1, @"C:\fms");
+
+        var candidate = Assert.Single(vm.Candidates);
+        Assert.Equal("NewOne", candidate.SuggestedTitle);
+    }
+
+    [Fact]
+    public async Task ScanDownloads_ExcludesArchivesMatchingAnIgnoredName()
+    {
+        var repo = new FakeMissionRepository();
+        var ignoredFmRepository = new FakeIgnoredFmRepository();
+        await ignoredFmRepository.AddAsync(GameTitle.Thief1, "Ignored Mission");
+        var archiveFileReader = new FakeArchiveFileReader(@"C:\Downloads\Ignored Mission (repack).zip", @"C:\Downloads\NewOne.zip");
+        var vm = MakeViewModel(repo, archiveFileReader: archiveFileReader, ignoredFmRepository: ignoredFmRepository);
+
+        await vm.ScanDownloads(GameTitle.Thief1, @"C:\Downloads", @"C:\fms");
+
+        var candidate = Assert.Single(vm.Candidates);
+        Assert.Equal("NewOne", candidate.SuggestedTitle);
+    }
+
+    [Fact]
+    public async Task IgnoreCandidateCommand_AddsToIgnoreListAndRemovesMatchingCandidates()
+    {
+        var repo = new FakeMissionRepository();
+        var ignoredFmRepository = new FakeIgnoredFmRepository();
+        var directoryReader = new FakeDirectoryReader(@"C:\fms\SomeMission", @"C:\fms\NewOne");
+        var vm = MakeViewModel(repo, directoryReader: directoryReader, ignoredFmRepository: ignoredFmRepository);
+        await vm.Scan(GameTitle.Thief1, @"C:\fms");
+        var toIgnore = vm.Candidates.Single(c => c.SuggestedTitle == "SomeMission");
+
+        await vm.IgnoreCandidateCommand.ExecuteAsync(toIgnore);
+
+        Assert.Single(vm.Candidates);
+        Assert.Equal("NewOne", vm.Candidates.Single().SuggestedTitle);
+        var ignored = Assert.Single(ignoredFmRepository.IgnoredFms);
+        Assert.Equal("SomeMission", ignored.Name);
+        Assert.Equal(GameTitle.Thief1, ignored.Game);
     }
 }

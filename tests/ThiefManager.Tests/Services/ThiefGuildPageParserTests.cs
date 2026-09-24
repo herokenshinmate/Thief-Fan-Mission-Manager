@@ -64,7 +64,46 @@ public class ThiefGuildPageParserTests
 
         var result = ThiefGuildPageParser.BuildResult(card, card.TextContent, "https://www.thiefguild.com/fanmissions/34342/the-black-mage");
 
-        Assert.Equal("grayman", result.Author);
+        Assert.Equal("grayman, JackFarmer", result.Author);
+    }
+
+    [Fact]
+    public async Task BuildResult_OnDetailPage_WithCoAuthoredMission_CreditsAllAuthors_NotTheMissionsButtonLink()
+    {
+        // Real-world markup shape from thiefguild.com/fanmissions/104893/rotlock-prison: the
+        // heading reads "Authors" (plural) and each author is followed by a "Missions" button
+        // linking to /fanmissions?author=..., which must not be picked up as an author name.
+        const string html = """
+            <html><head><title>Rotlock Prison - Fan Mission for Thief 2 -  Thief Guild - Thief Series and Related Games Fan Mission Database</title></head>
+            <body>
+              <div class="row well fmroundbox text-justify">
+                <h4>Authors</h4>
+                <div class="row">
+                  <div class="col-lg-11">
+                    <p>
+                      <a href="/user/159/lord-taffer">Lord Taffer</a>
+                      <a class="btn btn-default btn-xs" href="/fanmissions?author=16870">Missions</a>
+                      <br/>Co-Author
+                    </p>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-11">
+                    <p>
+                      <a href="/user/167/aemanyl">Aemanyl</a>
+                      <a class="btn btn-default btn-xs" href="/fanmissions?author=6934">Missions</a>
+                      <br/>Co-Author
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </body></html>
+            """;
+        var document = await ParseAsync(html);
+
+        var result = ThiefGuildPageParser.BuildResult(document, document.Body!.TextContent, "https://www.thiefguild.com/fanmissions/104893/rotlock-prison");
+
+        Assert.Equal("Lord Taffer, Aemanyl", result.Author);
     }
 
     [Fact]
