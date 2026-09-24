@@ -137,4 +137,99 @@ public class ThiefGuildPageParserTests
 
         Assert.Equal("Endless Rain", title);
     }
+
+    private static string SeriesHeaderPage(string membersHtml, string seriesHref = "/fanmissions?series=66445") => $$"""
+        <html><head><title>Some Mission - Fan Mission for Thief II: The Metal Age -  Thief Guild</title></head>
+        <body>
+          <h3 style="margin-bottom: 1px">Some Mission</h3>
+          <h6 style="margin: 2px">
+              <a href="{{seriesHref}}"
+              >
+                  The Book of Prophecy:
+              </a>
+                  <br/>
+                  {{membersHtml}}
+              <br/>
+          </h6>
+          <ul class="list-group">
+            <li class="list-group-item">Series: <a href="{{seriesHref}}">The Book of Prophecy</a></li>
+          </ul>
+        </body></html>
+        """;
+
+    private const string Part1Link = """
+        <a title="The Book of Prophecy Part 1: Dead Letter Box (2007)" class="text-muted" href="/fanmissions/2684/the-book-of-prophecy-part-1-dead-letter-box">
+            TBOPP1DLB
+        </a>
+        """;
+    private const string Part2Link = """
+        <a title="The Book of Prophecy Part 2: The Hidden City (2009)" class="text-muted" href="/fanmissions/2682/the-book-of-prophecy-part-2-the-hidden-city">
+            TBOPP2THC
+        </a>
+        """;
+    private const string Part3Link = """
+        <a title="The Book of Prophecy Part 3: In the Lion&#39;s Den (2026)" class="text-muted" href="/fanmissions/66450/the-book-of-prophecy-part-3-in-the-lions-den">
+            TBOPP3ITLD
+        </a>
+        """;
+
+    [Fact]
+    public async Task ExtractSeries_OnLastPartPage_ReturnsSeriesAndPosition()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + Part2Link + "TBOPP3ITLD"));
+
+        var series = ThiefGuildPageParser.ExtractSeries(document);
+
+        Assert.Equal(new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3), series);
+    }
+
+    [Fact]
+    public async Task ExtractSeries_OnMiddlePartPage_ReturnsMiddlePosition()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + "TBOPP2THC" + Part3Link));
+
+        Assert.Equal(2, ThiefGuildPageParser.ExtractSeries(document)?.Position);
+    }
+
+    [Fact]
+    public async Task ExtractSeries_OnPageWithoutSeries_ReturnsNull()
+    {
+        var document = await ParseAsync("<html><body><h3>Lonely Mission</h3><h6></h6></body></html>");
+
+        Assert.Null(ThiefGuildPageParser.ExtractSeries(document));
+    }
+
+    [Fact]
+    public async Task ExtractSeries_WithTwoUnlinkedEntries_ReturnsNull()
+    {
+        var document = await ParseAsync(SeriesHeaderPage("AAA" + Part2Link + "BBB"));
+
+        Assert.Null(ThiefGuildPageParser.ExtractSeries(document));
+    }
+
+    [Fact]
+    public async Task ExtractSeries_WithNoUnlinkedEntry_ReturnsNull()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + Part2Link));
+
+        Assert.Null(ThiefGuildPageParser.ExtractSeries(document));
+    }
+
+    [Fact]
+    public async Task ExtractSeries_WithNonNumericSeriesId_ReturnsNull()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + "TBOPP2THC", "/fanmissions?series=abc"));
+
+        Assert.Null(ThiefGuildPageParser.ExtractSeries(document));
+    }
+
+    [Fact]
+    public async Task BuildResult_OnDetailPageInSeries_IncludesSeries()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + "TBOPP2THC"));
+
+        var result = ThiefGuildPageParser.BuildResult(document, document.Body!.TextContent, "https://www.thiefguild.com/fanmissions/2682/x");
+
+        Assert.Equal(new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 2), result.Series);
+    }
 }
