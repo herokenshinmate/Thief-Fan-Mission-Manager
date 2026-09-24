@@ -1,0 +1,60 @@
+<ui:FluentWindow x:Class="ThiefManager.Views.IgnoreListWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Ignore List" Width="520" Height="480" MinWidth="420" MinHeight="300"
+        WindowStartupLocation="CenterOwner"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="Ignore List" FontFamily="Cambria" FontSize="15" FontWeight="SemiBold">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="EyeOff24" FontSize="16"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <DockPanel Grid.Row="1" Margin="16">
+            <TextBlock DockPanel.Dock="Top"
+                       Text="Missions on this list are hidden from Scan results. Remove one to let it show up again."
+                       Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+            <TextBlock DockPanel.Dock="Top" Text="The ignore list is empty."
+                       Foreground="{StaticResource MutedForegroundBrush}" HorizontalAlignment="Center" Margin="0,24,0,0"
+                       Visibility="{Binding Items.Count, Converter={StaticResource ZeroToVisibilityConverter}}"/>
+
+            <ListView ItemsSource="{Binding Items}" BorderThickness="0" Background="Transparent">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Game, Converter={StaticResource GameTitleToBrushConverter}}"/>
+                                <Image Source="{Binding Game, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
+                            </Grid>
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="2" Text="{Binding IgnoredAt, StringFormat='{}{0:d}'}"
+                                       Foreground="{StaticResource MutedForegroundBrush}" FontSize="11"
+                                       VerticalAlignment="Center" Margin="8,0"/>
+                            <ui:Button Grid.Column="3" Content="Remove" Padding="8,2"
+                                    Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                    CommandParameter="{Binding}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Delete24"/>
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </DockPanel>
+    </Grid>
+</ui:FluentWindow>

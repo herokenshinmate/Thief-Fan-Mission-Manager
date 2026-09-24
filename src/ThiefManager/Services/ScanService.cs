@@ -9,9 +9,14 @@ public static class ScanService
 {
     public static IReadOnlyList<ScanCandidate> FindNewCandidates(
         IEnumerable<string> subfolderPaths,
-        IEnumerable<string> existingFolderPaths)
+        IEnumerable<string> existingFolderPaths,
+        IEnumerable<string>? ignoredNames = null)
     {
         var existing = new HashSet<string>(existingFolderPaths, StringComparer.OrdinalIgnoreCase);
+        var ignored = (ignoredNames ?? Enumerable.Empty<string>())
+            .Select(FmNameMatcher.Normalize)
+            .Where(name => name.Length > 0)
+            .ToHashSet();
 
         return subfolderPaths
             .Where(path => !existing.Contains(path))
@@ -22,6 +27,7 @@ public static class ScanService
                 var title = Path.GetFileName(trimmed);
                 return new ScanCandidate(title, path);
             })
+            .Where(candidate => !ignored.Contains(FmNameMatcher.Normalize(candidate.SuggestedTitle)))
             .ToList();
     }
 

@@ -11,6 +11,7 @@ public class ThiefManagerDbContext : DbContext
 
     public DbSet<FanMission> FanMissions => Set<FanMission>();
     public DbSet<AppSettings> Settings => Set<AppSettings>();
+    public DbSet<IgnoredFm> IgnoredFms => Set<IgnoredFm>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         optionsBuilder.UseSqlite($"Data Source={_dbPath}");

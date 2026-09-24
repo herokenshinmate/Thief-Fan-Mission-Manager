@@ -11,7 +11,8 @@ public static class MissionQuery
         string? tagFilter,
         SortField sortField,
         bool ascending,
-        InstallStatus? installStatusFilter = null)
+        InstallStatus? installStatusFilter = null,
+        string? authorFilter = null)
     {
         var query = missions.AsEnumerable();
 
@@ -31,12 +32,22 @@ public static class MissionQuery
                 .Any(tag => tag.Equals(tagFilter, StringComparison.OrdinalIgnoreCase)));
         }
 
+        if (!string.IsNullOrWhiteSpace(authorFilter))
+        {
+            query = query.Where(m => (m.Author ?? string.Empty)
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Any(author => author.Contains(authorFilter, StringComparison.OrdinalIgnoreCase)));
+        }
+
         object KeySelector(FanMission m) => sortField switch
         {
             SortField.Title => m.Title,
             SortField.Game => m.Game,
             SortField.Status => m.Status,
+            SortField.InstallStatus => m.InstallStatus,
             SortField.Rating => m.Rating ?? -1,
+            SortField.Author => m.Author ?? string.Empty,
+            SortField.Tags => m.Tags,
             _ => m.Title
         };
 

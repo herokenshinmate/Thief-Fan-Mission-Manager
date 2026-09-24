@@ -39,4 +39,48 @@ public class DownloadedArchiveScannerTests
         Assert.Equal("A New Job", candidate.SuggestedTitle);
         Assert.Equal(Path.Combine(@"C:\fms", "A New Job"), candidate.TargetFolderPath);
     }
+
+    [Fact]
+    public void FindNewArchives_ExcludesArchivesMatchingAnAlreadyInstalledNameDespiteDifferentSpelling()
+    {
+        var archives = new[] { @"C:\Downloads\A_New_Job_v2.zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(
+            archives, @"C:\fms", Array.Empty<string>(), existingInstalledNames: new[] { "A New Job" });
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindNewArchives_ExcludesArchivesMatchingAnAlreadyInstalledNameWithBracketedTag()
+    {
+        var archives = new[] { @"C:\Downloads\A New Job (fixed).zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(
+            archives, @"C:\fms", Array.Empty<string>(), existingInstalledNames: new[] { "a-new-job" });
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindNewArchives_ExcludesArchivesMatchingAnIgnoredName()
+    {
+        var archives = new[] { @"C:\Downloads\Ignored Mission (repack).zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(
+            archives, @"C:\fms", Array.Empty<string>(), ignoredNames: new[] { "Ignored Mission" });
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindNewArchives_KeepsArchivesWithNoMatchingInstalledName()
+    {
+        var archives = new[] { @"C:\Downloads\A Different Mission.zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(
+            archives, @"C:\fms", Array.Empty<string>(), existingInstalledNames: new[] { "A New Job" });
+
+        Assert.Single(result);
+    }
 }

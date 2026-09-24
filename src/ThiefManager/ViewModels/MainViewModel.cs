@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ThiefManager.Data;
@@ -96,16 +97,19 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? tagFilter;
 
-    public string[] SortFieldOptions { get; } = { "Title", "Game", "Status", "Rating" };
+    [ObservableProperty]
+    private string? authorFilter;
+
+    public string[] SortFieldOptions { get; } = { "Title", "Game", "Status", "Install Status", "Rating", "Author", "Tags" };
 
     public string SortFieldDisplay
     {
-        get => SortField.ToString();
-        set => SortField = Enum.Parse<SortField>(value);
+        get => SortField == SortField.InstallStatus ? "Install Status" : SortField.ToString();
+        set => SortField = value == "Install Status" ? SortField.InstallStatus : Enum.Parse<SortField>(value);
     }
 
     [ObservableProperty]
-    private SortField sortField = SortField.Title;
+    private SortField sortField = SortField.Game;
 
     [ObservableProperty]
     private bool sortAscending = true;
@@ -135,6 +139,7 @@ public partial class MainViewModel : ObservableObject
         ApplyQuery();
     }
     partial void OnTagFilterChanged(string? value) => ApplyQuery();
+    partial void OnAuthorFilterChanged(string? value) => ApplyQuery();
     partial void OnSortFieldChanged(SortField value)
     {
         OnPropertyChanged(nameof(SortFieldDisplay));
@@ -164,7 +169,7 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyQuery()
     {
-        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter);
+        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter);
         VisibleMissions.Clear();
         foreach (var mission in filtered)
             VisibleMissions.Add(mission);
@@ -176,7 +181,8 @@ public partial class MainViewModel : ObservableObject
             return;
 
         var exePath = SelectedMission.Game == GameTitle.Thief1 ? _thief1ExePath : _thief2ExePath;
-        var result = _launchService.Launch(exePath);
+        var fmFolderName = Path.GetFileName(SelectedMission.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var result = _launchService.Launch(exePath, fmFolderName);
         LaunchError = result.Ok ? null : result.Error;
     }
 

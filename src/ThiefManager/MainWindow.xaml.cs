@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -5,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using ThiefManager.Data;
 using ThiefManager.Models;
+using ThiefManager.Services;
 using ThiefManager.ViewModels;
 using ThiefManager.Views;
 using Wpf.Ui.Controls;
@@ -20,6 +22,9 @@ public partial class MainWindow : FluentWindow
     private readonly Services.IDirectoryReader _directoryReader;
     private readonly Services.IArchiveFileReader _archiveFileReader;
     private readonly Services.IThiefGuildLookupService _thiefGuildLookupService;
+    private readonly IIgnoredFmRepository _ignoredFmRepository;
+    private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
+    private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
 
     public MainWindow(
         MainViewModel viewModel,
@@ -28,7 +33,8 @@ public partial class MainWindow : FluentWindow
         Services.LaunchService launchService,
         Services.IDirectoryReader directoryReader,
         Services.IArchiveFileReader archiveFileReader,
-        Services.IThiefGuildLookupService thiefGuildLookupService)
+        Services.IThiefGuildLookupService thiefGuildLookupService,
+        IIgnoredFmRepository ignoredFmRepository)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -38,9 +44,58 @@ public partial class MainWindow : FluentWindow
         _directoryReader = directoryReader;
         _archiveFileReader = archiveFileReader;
         _thiefGuildLookupService = thiefGuildLookupService;
+        _ignoredFmRepository = ignoredFmRepository;
         DataContext = _viewModel;
+
+        _sortableColumns = new Dictionary<System.Windows.Controls.GridViewColumn, SortField>
+        {
+            [TitleColumn] = SortField.Title,
+            [GameColumn] = SortField.Game,
+            [StatusColumn] = SortField.Status,
+            [InstallStatusColumn] = SortField.InstallStatus,
+            [RatingColumn] = SortField.Rating,
+            [AuthorColumn] = SortField.Author,
+            [TagsColumn] = SortField.Tags
+        };
+        _columnBaseHeaders = _sortableColumns.Keys.ToDictionary(c => c, c => c.Header?.ToString() ?? string.Empty);
+        _viewModel.PropertyChanged += MainViewModel_PropertyChanged;
+
         Loaded += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
         Loaded += (_, _) => ResizeTagsColumn();
+        Loaded += (_, _) => UpdateColumnHeaderSortIndicators();
+    }
+
+    private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainViewModel.SortField) or nameof(MainViewModel.SortAscending))
+            UpdateColumnHeaderSortIndicators();
+    }
+
+    private void UpdateColumnHeaderSortIndicators()
+    {
+        foreach (var (column, field) in _sortableColumns)
+        {
+            var baseHeader = _columnBaseHeaders[column];
+            column.Header = field == _viewModel.SortField
+                ? $"{baseHeader} {(_viewModel.SortAscending ? "▲" : "▼")}"
+                : baseHeader;
+        }
+    }
+
+    private void MissionListView_ColumnHeaderClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not GridViewColumnHeader { Column: { } column } header
+            || header.Role == GridViewColumnHeaderRole.Padding
+            || !_sortableColumns.TryGetValue(column, out var field))
+            return;
+
+        if (_viewModel.SortField == field)
+            _viewModel.SortAscending = !_viewModel.SortAscending;
+        else
+        {
+            _viewModel.SortField = field;
+            _viewModel.SortAscending = true;
+        }
     }
 
     private ScrollViewer? _missionListScrollViewer;
@@ -164,7 +219,7 @@ public partial class MainWindow : FluentWindow
     private async void OpenScan_Click(object sender, RoutedEventArgs e)
     {
         var settings = await _settingsRepository.GetAsync();
-        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository);
+        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository, _ignoredFmRepository);
         var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
         scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
         scanWindow.ShowDialog();
@@ -173,10 +228,18 @@ public partial class MainWindow : FluentWindow
     private async void QuickScanDownloads_Click(object sender, RoutedEventArgs e)
     {
         var settings = await _settingsRepository.GetAsync();
-        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository);
+        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository, _ignoredFmRepository);
         var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
         scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
         scanWindow.ShowDialog();
+    }
+
+    private async void OpenIgnoreList_Click(object sender, RoutedEventArgs e)
+    {
+        var ignoreListViewModel = new IgnoreListViewModel(_ignoredFmRepository);
+        await ignoreListViewModel.LoadCommand.ExecuteAsync(null);
+        var ignoreListWindow = new IgnoreListWindow(ignoreListViewModel) { Owner = this };
+        ignoreListWindow.ShowDialog();
     }
 
     private async void Install_Click(object sender, RoutedEventArgs e)

@@ -13,6 +13,8 @@
     <Color x:Key="ForegroundColor">#FFE0E0E0</Color>
     <Color x:Key="MutedForegroundColor">#FF9A9A9A</Color>
     <Color x:Key="SelectionColor">#FF3A3D41</Color>
+    <Color x:Key="AccentGoldColor">#FFC9A227</Color>
+    <Color x:Key="AccentGoldFillColor">#33C9A227</Color>
 
     <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelColor}"/>
     <SolidColorBrush x:Key="ControlBackgroundBrush" Color="{StaticResource ControlColor}"/>
@@ -20,6 +22,8 @@
     <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}"/>
     <SolidColorBrush x:Key="MutedForegroundBrush" Color="{StaticResource MutedForegroundColor}"/>
     <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}"/>
+    <SolidColorBrush x:Key="AccentGoldBrush" Color="{StaticResource AccentGoldColor}"/>
+    <SolidColorBrush x:Key="AccentGoldFillBrush" Color="{StaticResource AccentGoldFillColor}"/>
 
     <!-- WPF-UI's implicit MenuItem style enforces its own generous top-level header padding
          regardless of the Padding set here, producing a menu bar much taller than its text.
@@ -32,6 +36,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent" BorderThickness="1"
                             Padding="{TemplateBinding Padding}" CornerRadius="4"
                             SnapsToDevicePixels="True">
                         <Grid>
@@ -57,10 +62,12 @@
                             <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentGoldFillBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentGoldBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSubmenuOpen" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentGoldFillBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentGoldBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -141,6 +148,7 @@
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource ControlBorderBrush}"/>
         <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">

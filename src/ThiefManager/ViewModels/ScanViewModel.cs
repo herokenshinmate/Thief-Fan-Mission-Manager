@@ -13,17 +13,25 @@ public partial class ScanViewModel : ObservableObject
     private readonly IDirectoryReader _directoryReader;
     private readonly IArchiveFileReader _archiveFileReader;
     private readonly IMissionRepository _missionRepository;
+    private readonly IIgnoredFmRepository _ignoredFmRepository;
 
-    public ScanViewModel(IDirectoryReader directoryReader, IArchiveFileReader archiveFileReader, IMissionRepository missionRepository)
+    public ScanViewModel(
+        IDirectoryReader directoryReader,
+        IArchiveFileReader archiveFileReader,
+        IMissionRepository missionRepository,
+        IIgnoredFmRepository ignoredFmRepository)
     {
         _directoryReader = directoryReader;
         _archiveFileReader = archiveFileReader;
         _missionRepository = missionRepository;
+        _ignoredFmRepository = ignoredFmRepository;
         ImportSelectedCommand = new AsyncRelayCommand(ImportSelectedAsync);
+        IgnoreCandidateCommand = new AsyncRelayCommand<ScanCandidateViewModel>(IgnoreCandidateAsync);
     }
 
     public ObservableCollection<ScanCandidateViewModel> Candidates { get; } = new();
     public IAsyncRelayCommand ImportSelectedCommand { get; }
+    public IAsyncRelayCommand<ScanCandidateViewModel> IgnoreCandidateCommand { get; }
 
     [ObservableProperty] private string? scanError;
 
@@ -31,6 +39,7 @@ public partial class ScanViewModel : ObservableObject
     {
         ScanError = null;
         var existing = await _missionRepository.GetAllAsync();
+        var ignoredNames = await GetIgnoredNamesAsync(game);
 
         IReadOnlyList<string> subfolders;
         try
@@ -43,7 +52,7 @@ public partial class ScanViewModel : ObservableObject
             return;
         }
 
-        var newCandidates = ScanService.FindNewCandidates(subfolders, existing.Select(m => m.FolderPath));
+        var newCandidates = ScanService.FindNewCandidates(subfolders, existing.Select(m => m.FolderPath), ignoredNames);
 
         RemoveCandidates(c => c.Game == game && c.ArchivePath is null);
         foreach (var candidate in newCandidates)
@@ -54,6 +63,7 @@ public partial class ScanViewModel : ObservableObject
     {
         ScanError = null;
         var existing = await _missionRepository.GetAllAsync();
+        var ignoredNames = await GetIgnoredNamesAsync(game);
 
         IReadOnlyList<string> archiveFiles;
         try
@@ -67,11 +77,21 @@ public partial class ScanViewModel : ObservableObject
         }
 
         var existingArchivePaths = existing.Where(m => m.ArchivePath is not null).Select(m => m.ArchivePath!);
-        var newCandidates = DownloadedArchiveScanner.FindNewArchives(archiveFiles, fmFolder, existingArchivePaths);
+        var existingInstalledNames = existing
+            .Where(m => m.Game == game)
+            .Select(m => Path.GetFileName(m.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))
+            .Concat(existing.Where(m => m.Game == game).Select(m => m.Title));
+        var newCandidates = DownloadedArchiveScanner.FindNewArchives(archiveFiles, fmFolder, existingArchivePaths, existingInstalledNames, ignoredNames);
 
         RemoveCandidates(c => c.Game == game && c.ArchivePath is not null);
         foreach (var candidate in newCandidates)
             Candidates.Add(new ScanCandidateViewModel(game, candidate.SuggestedTitle, candidate.TargetFolderPath, candidate.ArchivePath));
+    }
+
+    private async Task<IReadOnlyList<string>> GetIgnoredNamesAsync(GameTitle game)
+    {
+        var ignored = await _ignoredFmRepository.GetAllAsync();
+        return ignored.Where(i => i.Game == game).Select(i => i.Name).ToList();
     }
 
     /// <summary>
@@ -147,6 +167,15 @@ public partial class ScanViewModel : ObservableObject
     {
         foreach (var candidate in Candidates.Where(match).ToList())
             Candidates.Remove(candidate);
+    }
+
+    private async Task IgnoreCandidateAsync(ScanCandidateViewModel? candidate)
+    {
+        if (candidate is null)
+            return;
+
+        await _ignoredFmRepository.AddAsync(candidate.Game, candidate.SuggestedTitle);
+        RemoveCandidates(c => c.Game == candidate.Game && FmNameMatcher.AreSimilar(c.SuggestedTitle, candidate.SuggestedTitle));
     }
 
     private async Task ImportSelectedAsync()

@@ -57,4 +57,19 @@ public class ScanServiceTests
         var candidate = Assert.Single(result);
         Assert.Equal(@"C:\fms\MissionA", candidate.FolderPath);
     }
+
+    [Fact]
+    public void FindNewCandidates_ExcludesFoldersMatchingAnIgnoredName()
+    {
+        var subfolders = new[]
+        {
+            @"C:\fms\Ignored_Mission_v2",
+            @"C:\fms\MissionA"
+        };
+
+        var result = ScanService.FindNewCandidates(subfolders, Array.Empty<string>(), ignoredNames: new[] { "Ignored Mission" });
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(@"C:\fms\MissionA", candidate.FolderPath);
+    }
 }

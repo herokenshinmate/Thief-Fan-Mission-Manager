@@ -25,6 +25,7 @@
             <converters:InstallStatusToDisplayNameConverter x:Key="InstallStatusToDisplayNameConverter"/>
             <converters:BoolToScanTypeIconConverter x:Key="BoolToScanTypeIconConverter"/>
             <converters:StringToTagListConverter x:Key="StringToTagListConverter"/>
+            <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

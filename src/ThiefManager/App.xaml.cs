@@ -31,6 +31,7 @@ public partial class App : Application
 
         var missionRepository = new MissionRepository(CreateContext);
         var settingsRepository = new SettingsRepository(CreateContext);
+        var ignoredFmRepository = new IgnoredFmRepository(CreateContext);
         var launchService = new LaunchService(new ProcessLauncher(), new FileExistsChecker());
         var directoryReader = new DirectoryReader();
         var archiveFileReader = new ArchiveFileReader();
@@ -60,7 +61,7 @@ public partial class App : Application
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
         GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
-        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService);
+        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService, ignoredFmRepository);
         MainWindow = mainWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();
