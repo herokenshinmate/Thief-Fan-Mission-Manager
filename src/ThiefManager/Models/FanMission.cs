@@ -18,4 +18,7 @@ public class FanMission
     public string? ArchivePath { get; set; }
     public string? ThiefGuildUrl { get; set; }
     public bool ThiefGuildLookupDismissed { get; set; }
+    public int? SeriesId { get; set; }
+    public int? SeriesPosition { get; set; }
+    public bool SeriesLookupChecked { get; set; }
 }

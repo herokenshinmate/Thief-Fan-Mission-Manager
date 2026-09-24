@@ -39,4 +39,20 @@ public class MissionRepository : IMissionRepository
         db.FanMissions.Remove(entity);
         await db.SaveChangesAsync();
     }
+
+    public async Task ApplySeriesLookupAsync(int missionId, int? seriesId, int? seriesPosition)
+    {
+        using var db = _contextFactory();
+        var entity = await db.FanMissions.FindAsync(missionId);
+        if (entity is null)
+            return;
+
+        if (entity.SeriesId is null)
+        {
+            entity.SeriesId = seriesId;
+            entity.SeriesPosition = seriesPosition;
+        }
+        entity.SeriesLookupChecked = true;
+        await db.SaveChangesAsync();
+    }
 }

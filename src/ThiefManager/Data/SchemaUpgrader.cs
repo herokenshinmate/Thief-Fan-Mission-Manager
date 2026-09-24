@@ -30,6 +30,20 @@ public static class SchemaUpgrader
                 "IgnoredAt" TEXT NOT NULL
             )
             """);
+
+        AddColumnIfMissing(connection, "FanMissions", "SeriesId", "INTEGER NULL");
+        AddColumnIfMissing(connection, "FanMissions", "SeriesPosition", "INTEGER NULL");
+        AddColumnIfMissing(connection, "FanMissions", "SeriesLookupChecked", "INTEGER NOT NULL DEFAULT 0");
+
+        CreateTableIfMissing(connection, "Series", """
+            CREATE TABLE "Series" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_Series" PRIMARY KEY AUTOINCREMENT,
+                "Name" TEXT NOT NULL,
+                "ThiefGuildSeriesId" INTEGER NULL,
+                "IsExpanded" INTEGER NOT NULL DEFAULT 1
+            );
+            CREATE UNIQUE INDEX "IX_Series_ThiefGuildSeriesId" ON "Series" ("ThiefGuildSeriesId");
+            """);
     }
 
     private static void CreateTableIfMissing(SqliteConnection connection, string table, string createTableSql)
