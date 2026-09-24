@@ -23,7 +23,7 @@ public static class ThiefGuildPageParser
         if (yearMatch.Success && int.TryParse(yearMatch.Groups[1].Value, out var year))
             releaseYear = year;
 
-        return new ThiefGuildLookupResult(author, releaseYear, tags, url);
+        return new ThiefGuildLookupResult(author, releaseYear, tags, url, ExtractSeries(scope));
     }
 
     /// <summary>
@@ -60,4 +60,59 @@ public static class ThiefGuildPageParser
     /// </summary>
     public static string ExtractDetailPageTitle(IDocument document) =>
         document.Title?.Split(" - ", 2).FirstOrDefault()?.Trim() ?? string.Empty;
+
+    /// <summary>
+    /// A mission detail page's header &lt;h6&gt; links the series ("/fanmissions?series=66445", text
+    /// "The Book of Prophecy:") and then lists every member in series order: the other missions as
+    /// links, and the current mission as plain, unlinked text. The current mission's 1-based index in
+    /// that list is its position. Search result cards have no such block. Anything not matching
+    /// this shape (no series link, no or several unlinked entries) yields null rather than a guess.
+    /// </summary>
+    public static ThiefGuildSeriesInfo? ExtractSeries(IParentNode scope)
+    {
+        var seriesLink = scope.QuerySelector("h6 a[href*='series=']");
+        if (seriesLink?.ParentElement is not { } container)
+            return null;
+
+        var idMatch = Regex.Match(seriesLink.GetAttribute("href") ?? string.Empty, @"[?&]series=(\d+)");
+        if (!idMatch.Success || !int.TryParse(idMatch.Groups[1].Value, out var seriesId))
+            return null;
+
+        var name = seriesLink.TextContent.Trim().TrimEnd(':').TrimEnd();
+        if (name.Length == 0)
+            return null;
+
+        var memberCount = 0;
+        int? currentPosition = null;
+        var pastSeriesLink = false;
+        foreach (var node in container.ChildNodes)
+        {
+            if (!pastSeriesLink)
+            {
+                pastSeriesLink = node == seriesLink;
+                continue;
+            }
+
+            if (node is IElement element)
+            {
+                if (!element.LocalName.Equals("a", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var href = element.GetAttribute("href") ?? string.Empty;
+                if (href.Contains("series="))
+                    break; // start of another series block
+                if (href.StartsWith("/fanmissions/", StringComparison.OrdinalIgnoreCase))
+                    memberCount++;
+            }
+            else if (node.NodeType == NodeType.Text && !string.IsNullOrWhiteSpace(node.TextContent))
+            {
+                memberCount++;
+                if (currentPosition is not null)
+                    return null;
+                currentPosition = memberCount;
+            }
+        }
+
+        return currentPosition is int position ? new ThiefGuildSeriesInfo(seriesId, name, position) : null;
+    }
 }

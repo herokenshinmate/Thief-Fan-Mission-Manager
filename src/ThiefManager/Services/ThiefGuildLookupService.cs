@@ -57,7 +57,11 @@ public class ThiefGuildLookupService : IThiefGuildLookupService
                 if (href is null)
                     continue;
 
-                return ThiefGuildPageParser.BuildResult(card, card.TextContent, BaseUrl + href);
+                // Result cards lack the series block, so prefer the detail page; fall back to the
+                // card if that second request fails.
+                var detailUrl = BaseUrl + href;
+                return await TryFetchDetailPageAsync(detailUrl)
+                    ?? ThiefGuildPageParser.BuildResult(card, card.TextContent, detailUrl);
             }
 
             return null;
@@ -73,18 +77,7 @@ public class ThiefGuildLookupService : IThiefGuildLookupService
         if (string.IsNullOrWhiteSpace(url))
             return null;
 
-        try
-        {
-            var (document, finalUrl) = await LoadDocumentAsync(url);
-            if (document is null)
-                return null;
-
-            return ThiefGuildPageParser.BuildResult(document, document.Body?.TextContent ?? string.Empty, finalUrl);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-        {
-            return null;
-        }
+        return await TryFetchDetailPageAsync(url);
     }
 
     private static bool IsMissionDetailUrl(string url) =>
@@ -100,5 +93,21 @@ public class ThiefGuildLookupService : IThiefGuildLookupService
         var html = await response.Content.ReadAsStringAsync();
         var document = await Browser.OpenAsync(req => req.Content(html));
         return (document, finalUrl);
+    }
+
+    private async Task<ThiefGuildLookupResult?> TryFetchDetailPageAsync(string url)
+    {
+        try
+        {
+            var (document, finalUrl) = await LoadDocumentAsync(url);
+            if (document is null)
+                return null;
+
+            return ThiefGuildPageParser.BuildResult(document, document.Body?.TextContent ?? string.Empty, finalUrl);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return null;
+        }
     }
 }
