@@ -54,6 +54,42 @@ public class MissionRepositoryTests : IDisposable
         Assert.Empty(await repo.GetAllAsync());
     }
 
+    [Fact]
+    public async Task ApplySeriesLookupAsync_WritesOnlySeriesColumns()
+    {
+        var repo = new MissionRepository(CreateContext);
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief2, FolderPath = "m" });
+        var staleCopy = (await repo.GetAllAsync()).Single();
+        var userCopy = (await repo.GetAllAsync()).Single();
+        userCopy.Status = MissionStatus.Completed;
+        userCopy.Rating = 4;
+        await repo.UpdateAsync(userCopy);
+
+        await repo.ApplySeriesLookupAsync(staleCopy.Id, 7, 3);
+
+        var reloaded = (await repo.GetAllAsync()).Single();
+        Assert.Equal(MissionStatus.Completed, reloaded.Status);
+        Assert.Equal(4, reloaded.Rating);
+        Assert.Equal(7, reloaded.SeriesId);
+        Assert.Equal(3, reloaded.SeriesPosition);
+        Assert.True(reloaded.SeriesLookupChecked);
+    }
+
+    [Fact]
+    public async Task ApplySeriesLookupAsync_DoesNotReplaceExistingSeries()
+    {
+        var repo = new MissionRepository(CreateContext);
+        await repo.AddAsync(new FanMission { Title = "M", FolderPath = "m", SeriesId = 1, SeriesPosition = 9 });
+        var id = (await repo.GetAllAsync()).Single().Id;
+
+        await repo.ApplySeriesLookupAsync(id, 2, 3);
+
+        var reloaded = (await repo.GetAllAsync()).Single();
+        Assert.Equal(1, reloaded.SeriesId);
+        Assert.Equal(9, reloaded.SeriesPosition);
+        Assert.True(reloaded.SeriesLookupChecked);
+    }
+
     public void Dispose()
     {
         try

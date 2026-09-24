@@ -29,4 +29,19 @@ public class FakeMissionRepository : IMissionRepository
         Missions.RemoveAll(m => m.Id == id);
         return Task.CompletedTask;
     }
+
+    public Task ApplySeriesLookupAsync(int missionId, int? seriesId, int? seriesPosition)
+    {
+        var mission = Missions.FirstOrDefault(m => m.Id == missionId);
+        if (mission is null)
+            return Task.CompletedTask;
+
+        if (mission.SeriesId is null)
+        {
+            mission.SeriesId = seriesId;
+            mission.SeriesPosition = seriesPosition;
+        }
+        mission.SeriesLookupChecked = true;
+        return Task.CompletedTask;
+    }
 }
