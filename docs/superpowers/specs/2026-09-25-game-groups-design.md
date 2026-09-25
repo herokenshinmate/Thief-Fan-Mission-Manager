@@ -55,7 +55,7 @@ Gains a `IReadOnlySet<GameTitle> collapsedGames` parameter (optional, default em
 - **Series spanning both games:** each game shows the series header with that game's members.
   - The header counts (`ShownCount`/`TotalCount`/`CompletedCount`, `CommonGame`) are computed from that game's members.
   - For "(x of y owned)", `TotalCount` is owned members *of that game*, and the part count is unchanged.
-  - Placeholders for missing parts are emitted only under the game that holds the series' lowest-positioned owned member (ties go to Thief1). A part is "missing" when **no** owned member in **any** game has its position, which is the same rule as today, using all missions.
+  - Placeholders for missing parts are emitted only under the game that holds the series' lowest-positioned *shown* member (ties go to Thief1). If the Game filter hides that game, the placeholders then appear under the visible one. A part is "missing" when **no** owned member in **any** game has its position, which is the same rule as today, using all missions.
 - **The Game filter** still works as before. With a game selected, only that game's banner shows.
 
 ### Campaign flags
@@ -122,7 +122,7 @@ Changes to existing behaviour:
   - a game with no filtered missions gets no banner;
   - the stats text with and without filters, including singular and plural;
   - sort order stays within each game;
-  - a series spanning both games shows under each game, with placeholders only under the first-owned game;
+  - a series spanning both games shows under each game, with placeholders only under the game of the first shown part;
   - `AccentKind` and `CampaignBadgeText` on each row type, including campaign-wins-over-series;
   - existing tests are updated to expect a leading banner. A small helper (for example, dropping `GameHeaderRow`s) keeps their intent readable.
 - **`MainViewModelTests`:**
