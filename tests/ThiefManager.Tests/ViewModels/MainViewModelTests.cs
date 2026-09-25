@@ -404,6 +404,20 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task ToggleSeriesExpanded_CollapsingSelectedMembersSeries_SelectsItsHeader()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+        var header = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+        vm.SelectedMission = vm.VisibleMissions.First(m => m.Title == "Part 2");
+
+        await vm.ToggleSeriesExpandedCommand.ExecuteAsync(header);
+
+        var selectedHeader = Assert.IsType<SeriesHeaderRow>(vm.SelectedRow);
+        Assert.Equal(header.Series.Id, selectedHeader.Series.Id);
+        Assert.Null(vm.SelectedMission);
+    }
+
+    [Fact]
     public async Task RenameSeriesAsync_UpdatesHeader()
     {
         var (_, _, vm) = await MakeWithSeriesAsync();
