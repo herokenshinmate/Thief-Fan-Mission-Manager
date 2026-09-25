@@ -10,6 +10,7 @@ public class FakeSeriesRepository : ISeriesRepository
     public FakeSeriesRepository(FakeMissionRepository missions) => _missions = missions;
 
     public List<Series> SeriesList { get; } = new();
+    public List<SeriesPart> PartsList { get; } = new();
 
     public Task<List<Series>> GetAllAsync() => Task.FromResult(SeriesList.ToList());
 
@@ -60,6 +61,17 @@ public class FakeSeriesRepository : ISeriesRepository
         return Task.CompletedTask;
     }
 
+    public Task<List<SeriesPart>> GetAllPartsAsync() => Task.FromResult(PartsList.ToList());
+
+    public Task ReplacePartsAsync(int seriesId, IReadOnlyList<SeriesPart> parts)
+    {
+        PartsList.RemoveAll(p => p.SeriesId == seriesId);
+        var nextId = PartsList.Count == 0 ? 1 : PartsList.Max(p => p.Id) + 1;
+        foreach (var part in parts)
+            PartsList.Add(new SeriesPart { Id = nextId++, SeriesId = seriesId, Position = part.Position, Title = part.Title, ThiefGuildUrl = part.ThiefGuildUrl });
+        return Task.CompletedTask;
+    }
+
     public Task DeleteAsync(int id)
     {
         foreach (var mission in _missions.Missions.Where(m => m.SeriesId == id))
@@ -68,6 +80,7 @@ public class FakeSeriesRepository : ISeriesRepository
             mission.SeriesPosition = null;
             mission.SeriesLookupChecked = true;
         }
+        PartsList.RemoveAll(p => p.SeriesId == id);
         SeriesList.RemoveAll(s => s.Id == id);
         return Task.CompletedTask;
     }
@@ -75,6 +88,7 @@ public class FakeSeriesRepository : ISeriesRepository
     public Task DeleteOrphansAsync()
     {
         SeriesList.RemoveAll(s => !_missions.Missions.Any(m => m.SeriesId == s.Id));
+        PartsList.RemoveAll(p => SeriesList.All(s => s.Id != p.SeriesId));
         return Task.CompletedTask;
     }
 

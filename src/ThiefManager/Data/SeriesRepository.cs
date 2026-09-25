@@ -81,6 +81,26 @@ public class SeriesRepository : ISeriesRepository
         await db.SaveChangesAsync();
     }
 
+    public async Task<List<SeriesPart>> GetAllPartsAsync()
+    {
+        using var db = _contextFactory();
+        return await db.SeriesParts.AsNoTracking().ToListAsync();
+    }
+
+    public async Task ReplacePartsAsync(int seriesId, IReadOnlyList<SeriesPart> parts)
+    {
+        using var db = _contextFactory();
+        db.SeriesParts.RemoveRange(await db.SeriesParts.Where(p => p.SeriesId == seriesId).ToListAsync());
+        db.SeriesParts.AddRange(parts.Select(p => new SeriesPart
+        {
+            SeriesId = seriesId,
+            Position = p.Position,
+            Title = p.Title,
+            ThiefGuildUrl = p.ThiefGuildUrl
+        }));
+        await db.SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(int id)
     {
         using var db = _contextFactory();
@@ -90,6 +110,8 @@ public class SeriesRepository : ISeriesRepository
             mission.SeriesPosition = null;
             mission.SeriesLookupChecked = true;
         }
+
+        db.SeriesParts.RemoveRange(await db.SeriesParts.Where(p => p.SeriesId == id).ToListAsync());
 
         var entity = await db.Series.FindAsync(id);
         if (entity is not null)
@@ -109,6 +131,8 @@ public class SeriesRepository : ISeriesRepository
         if (orphans.Count == 0)
             return;
 
+        var orphanIds = orphans.Select(s => s.Id).ToList();
+        db.SeriesParts.RemoveRange(await db.SeriesParts.Where(p => orphanIds.Contains(p.SeriesId)).ToListAsync());
         db.Series.RemoveRange(orphans);
         await db.SaveChangesAsync();
     }

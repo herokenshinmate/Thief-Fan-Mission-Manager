@@ -44,6 +44,27 @@ public static class SchemaUpgrader
             );
             CREATE UNIQUE INDEX "IX_Series_ThiefGuildSeriesId" ON "Series" ("ThiefGuildSeriesId");
             """);
+
+        AddColumnIfMissing(connection, "FanMissions", "ThiefGuildRating", "REAL NULL");
+        AddColumnIfMissing(connection, "FanMissions", "ThiefGuildRatingCount", "INTEGER NULL");
+        AddColumnIfMissing(connection, "FanMissions", "CampaignMissionCount", "INTEGER NULL");
+        AddColumnIfMissing(connection, "FanMissions", "Description", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "SequelOfTitle", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "SequelOfUrl", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "HasSequelTitle", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "HasSequelUrl", "TEXT NULL");
+        AddColumnIfMissing(connection, "FanMissions", "ThiefGuildMetadataVersion", "INTEGER NOT NULL DEFAULT 0");
+
+        CreateTableIfMissing(connection, "SeriesParts", """
+            CREATE TABLE "SeriesParts" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_SeriesParts" PRIMARY KEY AUTOINCREMENT,
+                "SeriesId" INTEGER NOT NULL,
+                "Position" INTEGER NOT NULL,
+                "Title" TEXT NOT NULL,
+                "ThiefGuildUrl" TEXT NULL
+            );
+            CREATE INDEX "IX_SeriesParts_SeriesId" ON "SeriesParts" ("SeriesId");
+            """);
     }
 
     private static void CreateTableIfMissing(SqliteConnection connection, string table, string createTableSql)

@@ -30,18 +30,33 @@ public class FakeMissionRepository : IMissionRepository
         return Task.CompletedTask;
     }
 
-    public Task ApplySeriesLookupAsync(int missionId, int? seriesId, int? seriesPosition)
+    public Task ApplyThiefGuildMetadataAsync(FanMission fetched)
     {
-        var mission = Missions.FirstOrDefault(m => m.Id == missionId);
+        var mission = Missions.FirstOrDefault(m => m.Id == fetched.Id);
         if (mission is null)
             return Task.CompletedTask;
 
-        if (mission.SeriesId is null)
+        mission.ThiefGuildRating = fetched.ThiefGuildRating;
+        mission.ThiefGuildRatingCount = fetched.ThiefGuildRatingCount;
+        mission.CampaignMissionCount = fetched.CampaignMissionCount;
+        mission.Description = fetched.Description;
+        mission.SequelOfTitle = fetched.SequelOfTitle;
+        mission.SequelOfUrl = fetched.SequelOfUrl;
+        mission.HasSequelTitle = fetched.HasSequelTitle;
+        mission.HasSequelUrl = fetched.HasSequelUrl;
+        mission.ThiefGuildMetadataVersion = fetched.ThiefGuildMetadataVersion;
+        if (string.IsNullOrWhiteSpace(mission.Author))
+            mission.Author = fetched.Author;
+        if (mission.ReleaseYear is null)
+            mission.ReleaseYear = fetched.ReleaseYear;
+        if (string.IsNullOrWhiteSpace(mission.Tags))
+            mission.Tags = fetched.Tags;
+        if (mission.SeriesId is null && !mission.SeriesLookupChecked)
         {
-            mission.SeriesId = seriesId;
-            mission.SeriesPosition = seriesPosition;
+            mission.SeriesId = fetched.SeriesId;
+            mission.SeriesPosition = fetched.SeriesPosition;
         }
-        mission.SeriesLookupChecked = true;
+        mission.SeriesLookupChecked |= fetched.SeriesLookupChecked;
         return Task.CompletedTask;
     }
 }

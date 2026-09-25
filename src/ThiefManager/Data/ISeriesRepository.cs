@@ -20,12 +20,17 @@ public interface ISeriesRepository
     Task RenameAsync(int id, string name);
     Task SetExpandedAsync(int id, bool isExpanded);
 
+    Task<List<SeriesPart>> GetAllPartsAsync();
+
+    /// <summary>Replaces the series' stored part list with <paramref name="parts"/> in one save.</summary>
+    Task ReplacePartsAsync(int seriesId, IReadOnlyList<SeriesPart> parts);
+
     /// <summary>
     /// Deletes the series and detaches its members. Members are marked series-checked so the
-    /// startup backfill doesn't regroup them.
+    /// startup backfill doesn't regroup them. Its stored part list is deleted too.
     /// </summary>
     Task DeleteAsync(int id);
 
-    /// <summary>Deletes every series that no mission references.</summary>
+    /// <summary>Deletes every series that no mission references. Its stored part list is deleted too.</summary>
     Task DeleteOrphansAsync();
 }

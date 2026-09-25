@@ -114,6 +114,45 @@ public class SeriesRepositoryTests : IDisposable
         Assert.Equal("Used", Assert.Single(await repo.GetAllAsync()).Name);
     }
 
+    [Fact]
+    public async Task ReplacePartsAsync_ReplacesTheSeriesPartList()
+    {
+        var repo = new SeriesRepository(CreateContext);
+        var series = await repo.GetOrCreateByNameAsync("S");
+        var other = await repo.GetOrCreateByNameAsync("Other");
+        await repo.ReplacePartsAsync(other.Id, new[] { new SeriesPart { Position = 1, Title = "Keep me" } });
+        await repo.ReplacePartsAsync(series.Id, new[] { new SeriesPart { Position = 1, Title = "Old" } });
+
+        await repo.ReplacePartsAsync(series.Id, new[]
+        {
+            new SeriesPart { Position = 1, Title = "Part 1", ThiefGuildUrl = "https://www.thiefguild.com/fanmissions/1/a" },
+            new SeriesPart { Position = 2, Title = "Part 2" }
+        });
+
+        var parts = await repo.GetAllPartsAsync();
+        Assert.Equal(new[] { "Part 1", "Part 2" }, parts.Where(p => p.SeriesId == series.Id).OrderBy(p => p.Position).Select(p => p.Title));
+        Assert.Equal("https://www.thiefguild.com/fanmissions/1/a", parts.Single(p => p.Title == "Part 1").ThiefGuildUrl);
+        Assert.Equal("Keep me", parts.Single(p => p.SeriesId == other.Id).Title);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_And_DeleteOrphansAsync_RemoveTheSeriesParts()
+    {
+        var repo = new SeriesRepository(CreateContext);
+        var missions = new MissionRepository(CreateContext);
+        var ungrouped = await repo.GetOrCreateByNameAsync("Ungrouped");
+        var orphan = await repo.GetOrCreateByNameAsync("Orphan");
+        var kept = await repo.GetOrCreateByNameAsync("Kept");
+        await missions.AddAsync(new FanMission { Title = "M", FolderPath = "m", SeriesId = kept.Id });
+        foreach (var s in new[] { ungrouped, orphan, kept })
+            await repo.ReplacePartsAsync(s.Id, new[] { new SeriesPart { Position = 1, Title = s.Name } });
+
+        await repo.DeleteAsync(ungrouped.Id);
+        await repo.DeleteOrphansAsync();
+
+        Assert.Equal("Kept", Assert.Single(await repo.GetAllPartsAsync()).Title);
+    }
+
     public void Dispose()
     {
         try
