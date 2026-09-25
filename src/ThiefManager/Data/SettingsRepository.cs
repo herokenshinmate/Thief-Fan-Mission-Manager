@@ -37,4 +37,21 @@ public class SettingsRepository : ISettingsRepository
         }
         await db.SaveChangesAsync();
     }
+
+    public async Task SetGameCollapsedAsync(GameTitle game, bool collapsed)
+    {
+        using var db = _contextFactory();
+        var existing = await db.Settings.FirstOrDefaultAsync(s => s.Id == SingletonId);
+        if (existing is null)
+        {
+            existing = new AppSettings { Id = SingletonId };
+            db.Settings.Add(existing);
+        }
+
+        if (game == GameTitle.Thief1)
+            existing.Thief1Collapsed = collapsed;
+        else
+            existing.Thief2Collapsed = collapsed;
+        await db.SaveChangesAsync();
+    }
 }

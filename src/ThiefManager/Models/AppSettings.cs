@@ -9,4 +9,6 @@ public class AppSettings
     public string? Thief2ExePath { get; set; }
     public string? Thief1DownloadsFolder { get; set; }
     public string? Thief2DownloadsFolder { get; set; }
+    public bool Thief1Collapsed { get; set; }
+    public bool Thief2Collapsed { get; set; }
 }

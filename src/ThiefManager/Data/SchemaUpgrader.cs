@@ -65,6 +65,9 @@ public static class SchemaUpgrader
             );
             CREATE INDEX "IX_SeriesParts_SeriesId" ON "SeriesParts" ("SeriesId");
             """);
+
+        AddColumnIfMissing(connection, "Settings", "Thief1Collapsed", "INTEGER NOT NULL DEFAULT 0");
+        AddColumnIfMissing(connection, "Settings", "Thief2Collapsed", "INTEGER NOT NULL DEFAULT 0");
     }
 
     private static void CreateTableIfMissing(SqliteConnection connection, string table, string createTableSql)
