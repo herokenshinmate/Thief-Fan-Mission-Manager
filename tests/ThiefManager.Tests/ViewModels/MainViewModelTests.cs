@@ -1,3 +1,4 @@
+using System.Net.Http;
 using ThiefManager.Models;
 using ThiefManager.Services;
 using ThiefManager.Tests.Fakes;
@@ -65,10 +66,11 @@ public class MainViewModelTests
         RecordingArchiveInstaller? archiveInstaller = null,
         RecordingFolderDeleter? folderDeleter = null,
         FakeSeriesRepository? seriesRepo = null,
-        FakeSettingsRepository? settingsRepo = null) =>
+        FakeSettingsRepository? settingsRepo = null,
+        FakeUpdateService? updateService = null) =>
         new(repo, MakeLaunchService(exeExists), archiveInstaller ?? new RecordingArchiveInstaller(),
             folderDeleter ?? new RecordingFolderDeleter(), seriesRepo ?? new FakeSeriesRepository(repo),
-            settingsRepo ?? new FakeSettingsRepository());
+            settingsRepo ?? new FakeSettingsRepository(), updateService ?? new FakeUpdateService { IsInstalled = false });
 
     [Fact]
     public async Task LoadCommand_PopulatesVisibleMissionsFromRepository()
@@ -907,5 +909,122 @@ public class MainViewModelTests
         Assert.True(seriesRepo.SeriesList.Single().IsExpanded);
         Assert.False((await settings.GetAsync()).Thief1Collapsed);
         Assert.Equal(new[] { "T1", "Part 1" }, vm.VisibleMissions.Select(m => m.Title));
+    }
+
+    private static AvailableUpdate Update398 => new("3.9.8", "- Fixed things.");
+
+    [Fact]
+    public async Task CheckForUpdatesOnStartup_WithUpdate_SetsReadyState()
+    {
+        var updates = new FakeUpdateService { NextResult = Update398 };
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+
+        await vm.CheckForUpdatesOnStartupAsync();
+
+        Assert.True(vm.IsUpdateReady);
+        Assert.Equal("3.9.8", vm.UpdateReadyVersion);
+        Assert.Equal("- Fixed things.", vm.UpdateReleaseNotes);
+    }
+
+    [Fact]
+    public async Task CheckForUpdatesOnStartup_WhenNotInstalled_DoesNothing()
+    {
+        var updates = new FakeUpdateService { IsInstalled = false, NextResult = Update398 };
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+
+        await vm.CheckForUpdatesOnStartupAsync();
+
+        Assert.Equal(0, updates.CheckCount);
+        Assert.False(vm.IsUpdateReady);
+        Assert.Null(vm.UpdateCheckMessage);
+    }
+
+    [Fact]
+    public async Task CheckForUpdatesOnStartup_SwallowsFailures()
+    {
+        var updates = new FakeUpdateService { ThrowOnCheck = new HttpRequestException("offline") };
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+
+        await vm.CheckForUpdatesOnStartupAsync();
+
+        Assert.False(vm.IsUpdateReady);
+        Assert.Null(vm.UpdateCheckMessage);
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_WhenNotInstalled_ExplainsWhy()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: new FakeUpdateService { IsInstalled = false });
+
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.Equal("Updates are only available in the installed version.", vm.UpdateCheckMessage);
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_WhenUpToDate_SaysSo()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: new FakeUpdateService());
+
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.Equal($"You're up to date (version {AppVersion.Current}).", vm.UpdateCheckMessage);
+        Assert.False(vm.IsUpdateReady);
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_WithUpdate_ReportsReady()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: new FakeUpdateService { NextResult = Update398 });
+
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.Equal("Version 3.9.8 is ready — restart to update.", vm.UpdateCheckMessage);
+        Assert.True(vm.IsUpdateReady);
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_OnFailure_ShowsTheError()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: new FakeUpdateService { ThrowOnCheck = new HttpRequestException("offline") });
+
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.Equal("Couldn't check for updates: offline", vm.UpdateCheckMessage);
+    }
+
+    [Fact]
+    public async Task TryRestartToUpdate_WithReadyUpdate_Applies()
+    {
+        var updates = new FakeUpdateService { NextResult = Update398 };
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+        await vm.CheckForUpdatesOnStartupAsync();
+
+        Assert.True(vm.TryRestartToUpdate(confirmedDespiteRefresh: false));
+        Assert.Equal(1, updates.ApplyCount);
+    }
+
+    [Fact]
+    public async Task TryRestartToUpdate_DuringRefresh_NeedsConfirmation()
+    {
+        var updates = new FakeUpdateService { NextResult = Update398 };
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+        await vm.CheckForUpdatesOnStartupAsync();
+        vm.IsThiefGuildRefreshRunning = true;
+
+        Assert.False(vm.TryRestartToUpdate(confirmedDespiteRefresh: false));
+        Assert.Equal(0, updates.ApplyCount);
+        Assert.True(vm.TryRestartToUpdate(confirmedDespiteRefresh: true));
+        Assert.Equal(1, updates.ApplyCount);
+    }
+
+    [Fact]
+    public void TryRestartToUpdate_WithoutUpdate_DoesNothing()
+    {
+        var updates = new FakeUpdateService();
+        var vm = MakeViewModel(new FakeMissionRepository(), updateService: updates);
+
+        Assert.True(vm.TryRestartToUpdate(confirmedDespiteRefresh: false));
+        Assert.Equal(0, updates.ApplyCount);
     }
 }
