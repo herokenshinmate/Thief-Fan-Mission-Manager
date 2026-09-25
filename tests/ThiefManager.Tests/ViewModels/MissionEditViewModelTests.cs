@@ -1,3 +1,4 @@
+using ThiefManager.Data;
 using ThiefManager.Models;
 using ThiefManager.Services;
 using ThiefManager.Tests.Fakes;
@@ -29,8 +30,8 @@ public class StubThiefGuildLookupService : IThiefGuildLookupService
 
 public class MissionEditViewModelTests
 {
-    private static MissionEditViewModel MakeViewModel(FakeMissionRepository repo, IThiefGuildLookupService? lookupService = null) =>
-        new(repo, lookupService ?? new StubThiefGuildLookupService(null));
+    private static MissionEditViewModel MakeViewModel(FakeMissionRepository repo, IThiefGuildLookupService? lookupService = null, FakeSeriesRepository? seriesRepo = null) =>
+        new(repo, lookupService ?? new StubThiefGuildLookupService(null), seriesRepo ?? new FakeSeriesRepository(repo));
 
     [Fact]
     public async Task SaveCommand_WithNoLoadedMission_AddsNewMissionToRepository()
@@ -207,5 +208,147 @@ public class MissionEditViewModelTests
         await vm.FetchThiefGuildMetadataCommand.ExecuteAsync(null);
 
         Assert.Equal("New Author", vm.Author);
+    }
+
+    private static async Task<(FakeMissionRepository Repo, FakeSeriesRepository SeriesRepo, FanMission Mission)> MissionInSeriesAsync()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var series = await seriesRepo.GetOrCreateByNameAsync("The Book of Prophecy");
+        await repo.AddAsync(new FanMission { Title = "Part 3", FolderPath = "p3", SeriesId = series.Id, SeriesPosition = 3 });
+        return (repo, seriesRepo, repo.Missions.Single());
+    }
+
+    [Fact]
+    public async Task LoadSeriesOptionsAsync_ListsNamesAndShowsCurrentSeries()
+    {
+        var (repo, seriesRepo, mission) = await MissionInSeriesAsync();
+        await seriesRepo.GetOrCreateByNameAsync("Another Saga");
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.LoadFrom(mission);
+
+        await vm.LoadSeriesOptionsAsync();
+
+        Assert.Equal(new[] { "Another Saga", "The Book of Prophecy" }, vm.SeriesNameOptions);
+        Assert.Equal("The Book of Prophecy", vm.SeriesName);
+        Assert.Equal(3, vm.SeriesPosition);
+    }
+
+    [Fact]
+    public async Task SaveCommand_WithNewSeriesName_CreatesSeriesAndAssigns()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadSeriesOptionsAsync();
+        vm.Title = "Keeper 1";
+        vm.SeriesName = " Keeper Chronicles ";
+        vm.SeriesPosition = 1;
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var series = Assert.Single(seriesRepo.SeriesList);
+        Assert.Equal("Keeper Chronicles", series.Name);
+        Assert.Equal(series.Id, repo.Missions.Single().SeriesId);
+        Assert.Equal(1, repo.Missions.Single().SeriesPosition);
+        Assert.True(repo.Missions.Single().SeriesLookupChecked);
+    }
+
+    [Fact]
+    public async Task SaveCommand_WithExistingNameInDifferentCase_JoinsThatSeries()
+    {
+        var (repo, seriesRepo, _) = await MissionInSeriesAsync();
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadSeriesOptionsAsync();
+        vm.Title = "Part 2";
+        vm.SeriesName = "the book of prophecy";
+        vm.SeriesPosition = 2;
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Single(seriesRepo.SeriesList);
+        Assert.All(repo.Missions, m => Assert.Equal(seriesRepo.SeriesList[0].Id, m.SeriesId));
+    }
+
+    [Fact]
+    public async Task SaveCommand_WithBlankSeriesName_ClearsSeriesAndRemovesOrphan()
+    {
+        var (repo, seriesRepo, mission) = await MissionInSeriesAsync();
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.LoadFrom(mission);
+        await vm.LoadSeriesOptionsAsync();
+        vm.SeriesName = "  ";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Null(repo.Missions.Single().SeriesId);
+        Assert.Null(repo.Missions.Single().SeriesPosition);
+        Assert.Empty(seriesRepo.SeriesList);
+    }
+
+    [Fact]
+    public async Task SaveCommand_WithoutTouchingSeries_KeepsSeries()
+    {
+        var (repo, seriesRepo, mission) = await MissionInSeriesAsync();
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.LoadFrom(mission);
+        await vm.LoadSeriesOptionsAsync();
+        vm.Notes = "great";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(seriesRepo.SeriesList.Single().Id, repo.Missions.Single().SeriesId);
+        Assert.Equal(3, repo.Missions.Single().SeriesPosition);
+        Assert.False(repo.Missions.Single().SeriesLookupChecked);
+    }
+
+    [Fact]
+    public async Task SaveCommand_WithoutLoadingSeriesOptions_KeepsSeries()
+    {
+        var (repo, seriesRepo, mission) = await MissionInSeriesAsync();
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.LoadFrom(mission);
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(seriesRepo.SeriesList.Single().Id, repo.Missions.Single().SeriesId);
+        Assert.Equal(3, repo.Missions.Single().SeriesPosition);
+    }
+
+    [Fact]
+    public async Task FetchThiefGuildMetadata_WithSeries_PrefillsBlankSeriesAndLinksThiefGuildId()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var lookup = new StubThiefGuildLookupService(new ThiefGuildLookupResult(null, null, "", "https://www.thiefguild.com/fanmissions/66450/x",
+            new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3)));
+        var vm = MakeViewModel(repo, lookup, seriesRepo);
+        await vm.LoadSeriesOptionsAsync();
+        vm.Title = "Part 3";
+
+        await vm.FetchThiefGuildMetadataCommand.ExecuteAsync(null);
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal("The Book of Prophecy", vm.SeriesName);
+        var series = Assert.Single(seriesRepo.SeriesList);
+        Assert.Equal(66445, series.ThiefGuildSeriesId);
+        Assert.Equal(3, repo.Missions.Single().SeriesPosition);
+        Assert.True(repo.Missions.Single().SeriesLookupChecked);
+    }
+
+    [Fact]
+    public async Task FetchThiefGuildMetadata_DoesNotOverwriteSeriesAlreadyEntered()
+    {
+        var (repo, seriesRepo, mission) = await MissionInSeriesAsync();
+        var lookup = new StubThiefGuildLookupService(new ThiefGuildLookupResult(null, null, "", "u",
+            new ThiefGuildSeriesInfo(1, "Something Else", 9)));
+        var vm = MakeViewModel(repo, lookup, seriesRepo);
+        vm.LoadFrom(mission);
+        await vm.LoadSeriesOptionsAsync();
+
+        await vm.FetchThiefGuildMetadataCommand.ExecuteAsync(null);
+
+        Assert.Equal("The Book of Prophecy", vm.SeriesName);
+        Assert.Equal(3, vm.SeriesPosition);
     }
 }
