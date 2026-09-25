@@ -334,8 +334,9 @@ public class MainViewModelTests
     {
         var (_, _, vm) = await MakeWithSeriesAsync();
 
-        Assert.IsType<MissionRow>(vm.VisibleRows[0]);                       // Alone
-        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[1]);                  // The Book of Prophecy
+        Assert.IsType<GameHeaderRow>(vm.VisibleRows[0]);
+        Assert.IsType<MissionRow>(vm.VisibleRows[1]);                       // Alone
+        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[2]);                  // The Book of Prophecy
         Assert.Equal(new[] { "Alone", "Part 2", "Part 3" }, vm.VisibleMissions.Select(m => m.Title));
     }
 
@@ -528,9 +529,10 @@ public class MainViewModelTests
     {
         var (_, _, vm) = await MakeWithPartsAsync();
 
-        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[0]);
-        Assert.Equal("Dead Letter Box", Assert.IsType<MissingPartRow>(vm.VisibleRows[1]).Part.Title);
-        Assert.IsType<MissionRow>(vm.VisibleRows[2]);
+        Assert.IsType<GameHeaderRow>(vm.VisibleRows[0]);
+        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[1]);
+        Assert.Equal("Dead Letter Box", Assert.IsType<MissingPartRow>(vm.VisibleRows[2]).Part.Title);
+        Assert.IsType<MissionRow>(vm.VisibleRows[3]);
     }
 
     [Fact]
