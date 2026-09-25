@@ -140,6 +140,24 @@
         </Setter>
     </Style>
 
+    <!-- Bare glyph button for a series header row's expand/collapse chevron. -->
+    <Style x:Key="SeriesChevronButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Margin" Value="0,0,4,0"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="Transparent">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Same issue as ListViewItem: GridViewColumnHeader's built-in Aero2 chrome
          ignores plain Background setters for its hover/pressed states (it falls
          back to a bright system highlight), so it gets a real ControlTemplate. -->

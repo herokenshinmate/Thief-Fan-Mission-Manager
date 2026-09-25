@@ -108,6 +108,26 @@
                     <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+                        <TextBlock Text="Series / Position"/>
+                    </StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0" IsEditable="True"
+                                  ItemsSource="{Binding SeriesNameOptions}"
+                                  Text="{Binding SeriesName, UpdateSourceTrigger=PropertyChanged}"
+                                  ToolTip="Pick an existing series or type a new name. Leave blank if this mission isn't part of a series."/>
+                        <TextBox Grid.Column="2"
+                                 Text="{Binding SeriesPosition, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                 IsEnabled="{Binding HasSeriesName}"
+                                 ToolTip="Position in the series, e.g. 3 for Part 3."/>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                         <ui:SymbolIcon Symbol="Folder24" Foreground="#FFA1887F" Margin="0,0,6,0"/>
                         <TextBlock Text="Folder Path"/>
                     </StackPanel>
@@ -154,7 +174,7 @@
                 <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
                 <TextBlock Text="Thief Guild URL"/>
             </StackPanel>
-            <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, and tags. Leave blank and click Fetch to search by title instead."
+            <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, tags, and series. Leave blank and click Fetch to search by title instead."
                        Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
             <DockPanel Margin="0,0,0,4">
                 <ui:Button DockPanel.Dock="Right" Content="Fetch Metadata" Command="{Binding FetchThiefGuildMetadataCommand}" Padding="14,6" Margin="8,0,0,0">

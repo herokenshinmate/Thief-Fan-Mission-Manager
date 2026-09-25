@@ -24,6 +24,8 @@ public partial class MainWindow : FluentWindow
     private readonly Services.IThiefGuildLookupService _thiefGuildLookupService;
     private readonly IIgnoredFmRepository _ignoredFmRepository;
     private readonly ISeriesRepository _seriesRepository;
+    private readonly SeriesBackfillService _seriesBackfillService;
+    private readonly CancellationTokenSource _backfillCancellation = new();
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
 
@@ -36,7 +38,8 @@ public partial class MainWindow : FluentWindow
         Services.IArchiveFileReader archiveFileReader,
         Services.IThiefGuildLookupService thiefGuildLookupService,
         IIgnoredFmRepository ignoredFmRepository,
-        ISeriesRepository seriesRepository)
+        ISeriesRepository seriesRepository,
+        SeriesBackfillService seriesBackfillService)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -48,6 +51,7 @@ public partial class MainWindow : FluentWindow
         _thiefGuildLookupService = thiefGuildLookupService;
         _ignoredFmRepository = ignoredFmRepository;
         _seriesRepository = seriesRepository;
+        _seriesBackfillService = seriesBackfillService;
         DataContext = _viewModel;
 
         _sortableColumns = new Dictionary<System.Windows.Controls.GridViewColumn, SortField>
@@ -63,9 +67,78 @@ public partial class MainWindow : FluentWindow
         _columnBaseHeaders = _sortableColumns.Keys.ToDictionary(c => c, c => c.Header?.ToString() ?? string.Empty);
         _viewModel.PropertyChanged += MainViewModel_PropertyChanged;
 
-        Loaded += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
+        Loaded += async (_, _) =>
+        {
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+            await RunSeriesBackfillAsync();
+        };
         Loaded += (_, _) => ResizeTagsColumn();
         Loaded += (_, _) => UpdateColumnHeaderSortIndicators();
+        Closed += (_, _) => _backfillCancellation.Cancel();
+    }
+
+    private async Task RunSeriesBackfillAsync()
+    {
+        var progress = new Progress<(int Done, int Total)>(p =>
+            _viewModel.BackgroundStatus = p.Done < p.Total
+                ? $"Checking Thief Guild for series info… {p.Done}/{p.Total}"
+                : null);
+
+        _seriesBackfillService.SeriesAssigned += SeriesBackfill_SeriesAssigned;
+        try
+        {
+            await _seriesBackfillService.RunAsync(progress, _backfillCancellation.Token);
+        }
+        catch (Exception)
+        {
+            // Best-effort: cancellation on close or a database hiccup just leaves the remaining
+            // missions unchecked, and they're retried on the next launch.
+        }
+        finally
+        {
+            _seriesBackfillService.SeriesAssigned -= SeriesBackfill_SeriesAssigned;
+            _viewModel.BackgroundStatus = null;
+        }
+    }
+
+    private async void SeriesBackfill_SeriesAssigned(object? sender, EventArgs e) =>
+        await _viewModel.LoadCommand.ExecuteAsync(null);
+
+    private async void RenameSeries_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedRow is not SeriesHeaderRow header)
+            return;
+
+        var nameBox = new Wpf.Ui.Controls.TextBox { Text = header.Series.Name, MinWidth = 320 };
+        var dialog = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = "Rename Series",
+            Content = nameBox,
+            PrimaryButtonText = "Rename",
+            CloseButtonText = "Cancel"
+        };
+
+        if (await dialog.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            await _viewModel.RenameSeriesAsync(header.Series, nameBox.Text);
+    }
+
+    private async void UngroupSeries_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedRow is not SeriesHeaderRow header)
+            return;
+
+        var confirmDialog = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = "Ungroup Series",
+            Content = $"Ungroup \"{header.Series.Name}\"?\n\nIts {header.TotalCount} mission(s) stay in your library as standalone missions.",
+            PrimaryButtonText = "Ungroup",
+            CloseButtonText = "Cancel"
+        };
+
+        if (await confirmDialog.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            await _viewModel.UngroupSelectedSeriesCommand.ExecuteAsync(null);
     }
 
     private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -139,9 +212,10 @@ public partial class MainWindow : FluentWindow
         return null;
     }
 
-    private void AddMission_Click(object sender, RoutedEventArgs e)
+    private async void AddMission_Click(object sender, RoutedEventArgs e)
     {
         var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService, _seriesRepository);
+        await editViewModel.LoadSeriesOptionsAsync();
         var editWindow = new MissionEditWindow(editViewModel) { Owner = this };
         editViewModel.Saved += async (_, _) =>
         {
@@ -151,22 +225,32 @@ public partial class MainWindow : FluentWindow
         editWindow.ShowDialog();
     }
 
-    private void MissionList_DoubleClick(object sender, MouseButtonEventArgs e) =>
-        OpenPropertiesForSelectedMission();
-
-    private void MissionProperties_Click(object sender, RoutedEventArgs e) =>
-        OpenPropertiesForSelectedMission();
-
-    private void OpenPropertiesForSelectedMission()
+    private async void MissionList_DoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (_viewModel.SelectedMission is not null)
-            OpenPropertiesFor(_viewModel.SelectedMission);
+        // The chevron button already toggles on each click; don't toggle again on its double-click.
+        if (e.OriginalSource is DependencyObject source && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) is not null)
+            return;
+
+        if (_viewModel.SelectedRow is SeriesHeaderRow)
+            await _viewModel.ToggleSeriesExpandedCommand.ExecuteAsync(null);
+        else
+            await OpenPropertiesForSelectedMissionAsync();
     }
 
-    private void OpenPropertiesFor(FanMission mission)
+    private async void MissionProperties_Click(object sender, RoutedEventArgs e) =>
+        await OpenPropertiesForSelectedMissionAsync();
+
+    private async Task OpenPropertiesForSelectedMissionAsync()
+    {
+        if (_viewModel.SelectedMission is not null)
+            await OpenPropertiesForAsync(_viewModel.SelectedMission);
+    }
+
+    private async Task OpenPropertiesForAsync(FanMission mission)
     {
         var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService, _seriesRepository);
         editViewModel.LoadFrom(mission);
+        await editViewModel.LoadSeriesOptionsAsync();
         var editWindow = new MissionEditWindow(editViewModel) { Owner = this };
         editViewModel.Saved += async (_, _) =>
         {
@@ -184,7 +268,7 @@ public partial class MainWindow : FluentWindow
 
     private static T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
     {
-        while (current is not null)
+        while (current is Visual or System.Windows.Media.Media3D.Visual3D)
         {
             if (current is T match)
                 return match;
@@ -278,7 +362,7 @@ public partial class MainWindow : FluentWindow
         var notFoundResult = await notFoundDialog.ShowDialogAsync();
 
         if (notFoundResult == Wpf.Ui.Controls.MessageBoxResult.Primary)
-            OpenPropertiesFor(mission);
+            await OpenPropertiesForAsync(mission);
         else
             await _viewModel.DismissThiefGuildLookupAsync(mission);
     }
