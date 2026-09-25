@@ -28,6 +28,9 @@
             <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True"/>
+            <converters:AccentKindToBrushConverter x:Key="AccentKindToBrushConverter"
+                                                   CampaignBrush="{StaticResource CampaignAccentBrush}"
+                                                   SeriesBrush="{StaticResource SeriesAccentBrush}"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

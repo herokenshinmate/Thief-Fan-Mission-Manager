@@ -24,6 +24,11 @@
     <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}"/>
     <SolidColorBrush x:Key="AccentGoldBrush" Color="{StaticResource AccentGoldColor}"/>
     <SolidColorBrush x:Key="AccentGoldFillBrush" Color="{StaticResource AccentGoldFillColor}"/>
+    <SolidColorBrush x:Key="CampaignAccentBrush" Color="#FFC9A227"/>
+    <SolidColorBrush x:Key="SeriesAccentBrush" Color="#FF64B5F6"/>
+    <SolidColorBrush x:Key="CampaignBadgeBackgroundBrush" Color="#33C9A227"/>
+    <SolidColorBrush x:Key="SeriesBadgeBackgroundBrush" Color="#3364B5F6"/>
+    <SolidColorBrush x:Key="BannerBackgroundBrush" Color="{StaticResource PanelColor}"/>
 
     <!-- WPF-UI's implicit MenuItem style enforces its own generous top-level header padding
          regardless of the Padding set here, producing a menu bar much taller than its text.
@@ -120,13 +125,20 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListViewItem">
-                    <Border x:Name="ItemBorder"
-                            Background="{TemplateBinding Background}"
-                            Padding="{TemplateBinding Padding}"
-                            SnapsToDevicePixels="True">
-                        <GridViewRowPresenter Content="{TemplateBinding Content}"
-                                              Columns="{TemplateBinding GridView.ColumnCollection}"/>
-                    </Border>
+                    <Grid>
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                                  Columns="{TemplateBinding GridView.ColumnCollection}"/>
+                        </Border>
+                        <!-- Campaign/series accent: sits inside the row's 4px left padding so the
+                             cells stay aligned with the column headers, and outside the hover/selection
+                             fill so it stays visible. -->
+                        <Border Width="3" HorizontalAlignment="Left" IsHitTestVisible="False"
+                                Background="{Binding Accent, Converter={StaticResource AccentKindToBrushConverter}}"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource ControlBackgroundBrush}"/>
