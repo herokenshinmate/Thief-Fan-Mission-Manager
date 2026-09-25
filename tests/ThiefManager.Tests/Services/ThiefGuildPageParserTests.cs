@@ -1,5 +1,6 @@
 using AngleSharp;
 using AngleSharp.Dom;
+using System.Globalization;
 using ThiefManager.Services;
 using Xunit;
 
@@ -180,7 +181,9 @@ public class ThiefGuildPageParserTests
 
         var series = ThiefGuildPageParser.ExtractSeries(document);
 
-        Assert.Equal(new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3), series);
+        Assert.Equal(66445, series!.ThiefGuildSeriesId);
+        Assert.Equal("The Book of Prophecy", series.Name);
+        Assert.Equal(3, series.Position);
     }
 
     [Fact]
@@ -230,6 +233,183 @@ public class ThiefGuildPageParserTests
 
         var result = ThiefGuildPageParser.BuildResult(document, document.Body!.TextContent, "https://www.thiefguild.com/fanmissions/2682/x");
 
-        Assert.Equal(new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 2), result.Series);
+        Assert.Equal(66445, result.Series!.ThiefGuildSeriesId);
+        Assert.Equal("The Book of Prophecy", result.Series.Name);
+        Assert.Equal(2, result.Series.Position);
+    }
+
+    private const string MetadataPage = "<html><head><title>Endless Rain - Fan Mission for Thief Gold -  Thief Guild</title>\n" +
+        "<script type=\"application/ld+json\">\n" +
+        "{ \"@context\": \"http://schema.org\", \"@type\": \"CreativeWork\", \"name\": \"Endless Rain\",\n" +
+        "  \"description\": \"\\\"There was a time\\\"\\r\\nThe high plazas of Stonemarket call me tonight.   \" }\n" +
+        "</script></head>\n" +
+        "<body>\n" +
+        "  <h3>Endless Rain <span class=\"text-muted\">(2014)</span></h3>\n" +
+        "  <div class=\"panel-body\"><div class=\"row\"><div class=\"col-lg-6 col-xs-12\"><div class=\"row\">\n" +
+        "    <p style=\"font-size: xx-large\">\n" +
+        "      <i class=\"material-icons text-primary\">star</i>\n" +
+        "      9.<small>02</small>\n" +
+        "    </p></div></div>\n" +
+        "    <div class=\"col\"><div style=\"font-size: x-large\">\n" +
+        "      <a href=\"/fanmissions/rating_list/2535\" class=\"label label-default\">\n" +
+        "        229 ratings\n" +
+        "      </a></div></div></div></div>\n" +
+        "  <ul class=\"list-group\">\n" +
+        "    <li class=\"list-group-item\">Game: Thief Gold</li>\n" +
+        "    <li class=\"list-group-item\">Released: Sept. 8, 2014</li>\n" +
+        "    <li class=\"list-group-item\">\n" +
+        "      Single mission\n" +
+        "    </li>\n" +
+        "    <li class=\"list-group-item\">\n" +
+        "      Sequel of:\n" +
+        "      <br/>\n" +
+        "      <a href=\"/works/bc79e112-64cb-4cdf-9ac5-bce4a4b82592\">Between These Dark Walls</a>\n" +
+        "    </li>\n" +
+        "    <li class=\"list-group-item text-muted\">\n" +
+        "      <small>FM has a sequel:\n" +
+        "      <br/>\n" +
+        "      <a href=\"/works/242559be-45c6-41c5-8d59-34fe374f77b9\">The Chalice of Souls</a>\n" +
+        "      </small>\n" +
+        "    </li>\n" +
+        "  </ul>\n" +
+        "</body></html>";
+
+    [Fact]
+    public async Task ExtractRating_ReadsRatingAndCount()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        var (rating, count) = ThiefGuildPageParser.ExtractRating(document);
+
+        Assert.Equal(9.02, rating);
+        Assert.Equal(229, count);
+    }
+
+    [Fact]
+    public async Task ExtractRating_UnderCommaDecimalCulture_ParsesInvariantly()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            var document = await ParseAsync(MetadataPage);
+
+            Assert.Equal(9.02, ThiefGuildPageParser.ExtractRating(document).Rating);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    [Fact]
+    public async Task ExtractRating_WithoutRatingCountLink_ReturnsNulls()
+    {
+        var document = await ParseAsync("""<p><i class="material-icons">star</i> 9.<small>02</small></p>""");
+
+        var (rating, count) = ThiefGuildPageParser.ExtractRating(document);
+
+        Assert.Null(rating);
+        Assert.Null(count);
+    }
+
+    [Fact]
+    public async Task ExtractCampaignMissionCount_SingleMission_Returns1()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        Assert.Equal(1, ThiefGuildPageParser.ExtractCampaignMissionCount(document));
+    }
+
+    [Fact]
+    public async Task ExtractCampaignMissionCount_Campaign_ReturnsMissionCount()
+    {
+        var document = await ParseAsync("""
+            <ul class="list-group"><li class="list-group-item">
+                Campaign of 10 missions
+            </li></ul>
+            """);
+
+        Assert.Equal(10, ThiefGuildPageParser.ExtractCampaignMissionCount(document));
+    }
+
+    [Fact]
+    public async Task ExtractCampaignMissionCount_Missing_ReturnsNull()
+    {
+        var document = await ParseAsync("""<ul class="list-group"><li class="list-group-item">Game: Thief Gold</li></ul>""");
+
+        Assert.Null(ThiefGuildPageParser.ExtractCampaignMissionCount(document));
+    }
+
+    [Fact]
+    public async Task ExtractDescription_ReadsLdJsonDescription()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        var description = ThiefGuildPageParser.ExtractDescription(document);
+
+        Assert.Equal("\"There was a time\"\r\nThe high plazas of Stonemarket call me tonight.", description);
+    }
+
+    [Fact]
+    public async Task ExtractDescription_InvalidJson_ReturnsNull()
+    {
+        var document = await ParseAsync("""<html><head><script type="application/ld+json">{ not json</script></head><body></body></html>""");
+
+        Assert.Null(ThiefGuildPageParser.ExtractDescription(document));
+    }
+
+    [Fact]
+    public async Task ExtractSidebarLink_ReadsSequelLinksAsAbsoluteUrls()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        Assert.Equal(
+            new ThiefGuildLink("Between These Dark Walls", "https://www.thiefguild.com/works/bc79e112-64cb-4cdf-9ac5-bce4a4b82592"),
+            ThiefGuildPageParser.ExtractSidebarLink(document, "Sequel of:"));
+        Assert.Equal(
+            new ThiefGuildLink("The Chalice of Souls", "https://www.thiefguild.com/works/242559be-45c6-41c5-8d59-34fe374f77b9"),
+            ThiefGuildPageParser.ExtractSidebarLink(document, "FM has a sequel:"));
+    }
+
+    [Fact]
+    public async Task BuildResult_OnDetailPage_IncludesAllMetadata()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        var result = ThiefGuildPageParser.BuildResult(document, document.Body!.TextContent, "https://www.thiefguild.com/fanmissions/2535/endless-rain");
+
+        Assert.Equal(9.02, result.Rating);
+        Assert.Equal(229, result.RatingCount);
+        Assert.Equal(1, result.CampaignMissionCount);
+        Assert.StartsWith("\"There was a time\"", result.Description);
+        Assert.Equal("Between These Dark Walls", result.SequelOf?.Title);
+        Assert.Equal("The Chalice of Souls", result.HasSequel?.Title);
+        Assert.Null(result.Series);
+    }
+
+    [Fact]
+    public async Task BuildResult_InSeries_ListsEveryPartWithTitlesAndUrls()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + "TBOPP2THC" + Part3Link));
+
+        var result = ThiefGuildPageParser.BuildResult(document, document.Body!.TextContent, "https://www.thiefguild.com/fanmissions/2682/x");
+
+        Assert.Equal(new[]
+        {
+            new ThiefGuildSeriesPartInfo(1, "The Book of Prophecy Part 1: Dead Letter Box", "https://www.thiefguild.com/fanmissions/2684/the-book-of-prophecy-part-1-dead-letter-box"),
+            new ThiefGuildSeriesPartInfo(2, "Some Mission", null),
+            new ThiefGuildSeriesPartInfo(3, "The Book of Prophecy Part 3: In the Lion's Den", "https://www.thiefguild.com/fanmissions/66450/the-book-of-prophecy-part-3-in-the-lions-den")
+        }, result.Series!.Parts);
+    }
+
+    [Fact]
+    public async Task ExtractSeries_WithoutCurrentTitle_UsesTheUnlinkedTextForTheCurrentPart()
+    {
+        var document = await ParseAsync(SeriesHeaderPage(Part1Link + "TBOPP2THC"));
+
+        var series = ThiefGuildPageParser.ExtractSeries(document);
+
+        Assert.Equal("TBOPP2THC", series!.Parts![1].Title);
     }
 }
