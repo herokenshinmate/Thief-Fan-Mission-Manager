@@ -26,6 +26,8 @@
             <converters:BoolToScanTypeIconConverter x:Key="BoolToScanTypeIconConverter"/>
             <converters:StringToTagListConverter x:Key="StringToTagListConverter"/>
             <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

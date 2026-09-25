@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThiefManager"
         xmlns:models="clr-namespace:ThiefManager.Models"
+        xmlns:views="clr-namespace:ThiefManager.Views"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="700"
@@ -131,8 +132,8 @@
         <TextBlock DockPanel.Dock="Top" Text="{Binding InstallError}" Foreground="Red" Margin="0,0,0,8"
                    Visibility="{Binding InstallError, Converter={StaticResource NullToVisibilityConverter}}"/>
 
-        <ListView x:Name="MissionListView" ItemsSource="{Binding VisibleMissions}"
-                  SelectedItem="{Binding SelectedMission}"
+        <ListView x:Name="MissionListView" ItemsSource="{Binding VisibleRows}"
+                  SelectedItem="{Binding SelectedRow}"
                   MouseDoubleClick="MissionList_DoubleClick"
                   MouseRightButtonUp="MissionList_MouseRightButtonUp"
                   SizeChanged="MissionListView_SizeChanged"
@@ -141,12 +142,39 @@
                   GridViewColumnHeader.Click="MissionListView_ColumnHeaderClick">
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                    <MenuItem Header="Properties..." Click="MissionProperties_Click">
+                    <MenuItem Header="Rename Series..." Click="RenameSeries_Click"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Rename24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Expand / Collapse" Command="{Binding ToggleSeriesExpandedCommand}"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="ChevronUpDown24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Ungroup Series..." Click="UngroupSeries_Click"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24" Foreground="#FFE57373"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Properties..." Click="MissionProperties_Click"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Info24"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Set Status">
+                    <MenuItem Header="Series..." Click="MissionProperties_Click"
+                              ToolTip="Set or change this mission's series and position in Properties."
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Set Status"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Flag24"/>
                         </MenuItem.Icon>
@@ -171,19 +199,22 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
-                    <Separator/>
-                    <MenuItem Header="Install" Click="Install_Click">
+                    <Separator Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <MenuItem Header="Install" Click="Install_Click"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Uninstall..." Click="Uninstall_Click">
+                    <MenuItem Header="Uninstall..." Click="Uninstall_Click"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Delete24" Foreground="#FFE57373"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator/>
-                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}">
+                    <Separator Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}"
+                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Delete24"/>
                         </MenuItem.Icon>
@@ -192,76 +223,148 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn x:Name="TitleColumn" Header="Title" DisplayMemberBinding="{Binding Title}" Width="220"/>
+                    <GridViewColumn x:Name="TitleColumn" Header="Title" Width="220">
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <TextBlock x:Name="TitleText" Text="{Binding DisplayTitle}" TextTrimming="CharacterEllipsis"/>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsSeriesMember}" Value="True">
+                                                <Setter TargetName="TitleText" Property="Margin" Value="22,0,0,0"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                                <views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="{Binding ChevronGlyph}" Style="{StaticResource SeriesChevronButtonStyle}"
+                                                    Command="{Binding DataContext.ToggleSeriesExpandedCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
+                    </GridViewColumn>
                     <GridViewColumn x:Name="GameColumn" Header="Game" Width="220">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Grid Width="20" Height="20" Margin="0,0,6,0">
-                                        <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Game, Converter={StaticResource GameTitleToBrushConverter}}"/>
-                                        <Image Source="{Binding Game, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
-                                    </Grid>
-                                    <TextBlock Text="{Binding Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid Width="20" Height="20" Margin="0,0,6,0">
+                                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Mission.Game, Converter={StaticResource GameTitleToBrushConverter}}"/>
+                                                <Image Source="{Binding Mission.Game, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Mission.Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                                <views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Visibility="{Binding CommonGame, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <Grid Width="20" Height="20" Margin="0,0,6,0">
+                                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding CommonGame, Converter={StaticResource GameTitleToBrushConverter}}"/>
+                                                <Image Source="{Binding CommonGame, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding CommonGame, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
                     <GridViewColumn x:Name="StatusColumn" Header="Status" Width="120">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="{Binding Status, Converter={StaticResource MissionStatusToIconConverter}}"
-                                                   Foreground="{Binding Status, Converter={StaticResource MissionStatusToBrushConverter}}" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding Status, Converter={StaticResource MissionStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="{Binding Mission.Status, Converter={StaticResource MissionStatusToIconConverter}}"
+                                                           Foreground="{Binding Mission.Status, Converter={StaticResource MissionStatusToBrushConverter}}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Mission.Status, Converter={StaticResource MissionStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                                <views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ProgressText}" Foreground="{StaticResource MutedForegroundBrush}" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
                     <GridViewColumn x:Name="InstallStatusColumn" Header="Install Status" Width="130">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="{Binding InstallStatus, Converter={StaticResource InstallStatusToIconConverter}}"
-                                                   Foreground="{Binding InstallStatus, Converter={StaticResource InstallStatusToBrushConverter}}" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding InstallStatus, Converter={StaticResource InstallStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="{Binding Mission.InstallStatus, Converter={StaticResource InstallStatusToIconConverter}}"
+                                                           Foreground="{Binding Mission.InstallStatus, Converter={StaticResource InstallStatusToBrushConverter}}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Mission.InstallStatus, Converter={StaticResource InstallStatusToDisplayNameConverter}}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
                     <GridViewColumn x:Name="RatingColumn" Header="Rating" Width="70">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F" Margin="0,0,4,0"
-                                                   Visibility="{Binding Rating, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                    <TextBlock Text="{Binding Rating}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F" Margin="0,0,4,0"
+                                                           Visibility="{Binding Mission.Rating, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                            <TextBlock Text="{Binding Mission.Rating}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
-                    <GridViewColumn x:Name="AuthorColumn" Header="Author" DisplayMemberBinding="{Binding Author}" Width="160"/>
+                    <GridViewColumn x:Name="AuthorColumn" Header="Author" Width="160">
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Mission.Author}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
+                    </GridViewColumn>
                     <GridViewColumn x:Name="TagsColumn" Header="Tags" Width="320">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <ItemsControl ItemsSource="{Binding Tags, Converter={StaticResource StringToTagListConverter}}"
-                                              ClipToBounds="True">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="{StaticResource ControlBackgroundBrush}"
-                                                    BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
-                                                    CornerRadius="9" Padding="7,1" Margin="0,2,4,2">
-                                                <TextBlock Text="{Binding}" FontSize="11" TextWrapping="NoWrap"/>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <ItemsControl ItemsSource="{Binding Mission.Tags, Converter={StaticResource StringToTagListConverter}}"
+                                                      ClipToBounds="True">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource ControlBackgroundBrush}"
+                                                            BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
+                                                            CornerRadius="9" Padding="7,1" Margin="0,2,4,2">
+                                                        <TextBlock Text="{Binding}" FontSize="11" TextWrapping="NoWrap"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
@@ -275,6 +378,8 @@
                 <TextBlock DockPanel.Dock="Right"
                            Text="{Binding Source={x:Static local:AppVersion.Current}, StringFormat='v{0}'}"
                            Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding BackgroundStatus}" Foreground="{StaticResource MutedForegroundBrush}"
+                           FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
             </DockPanel>
         </Border>
     </Grid>
