@@ -7,6 +7,12 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.1", "2026-09-25", new[]
+        {
+            "Missions that are part of a series (e.g. The Book of Prophecy Parts 1–3) are now grouped under a collapsible header in the mission list, in series order, showing how many you've completed.",
+            "Thief Guild lookups now detect a mission's series and its position in it; missions already linked to Thief Guild are checked once in the background at startup.",
+            "Set or change a mission's series by hand in Properties; right-click a series header to rename, collapse, or ungroup it."
+        }),
         new("3.9.0", "2026-09-24", new[]
         {
             "The mission list now defaults to sorting by Game (Thief 1 first) instead of Title.",
