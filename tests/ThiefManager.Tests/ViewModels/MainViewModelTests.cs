@@ -505,4 +505,127 @@ public class MainViewModelTests
         Assert.Equal("Install Status", vm.SortFieldDisplay);
         Assert.Contains("TG Rating", vm.SortFieldOptions);
     }
+
+    private static async Task<(FakeMissionRepository Repo, FakeSeriesRepository SeriesRepo, MainViewModel Vm)> MakeWithPartsAsync()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var series = await seriesRepo.GetOrCreateByThiefGuildIdAsync(66445, "The Book of Prophecy");
+        await seriesRepo.ReplacePartsAsync(series.Id, new[]
+        {
+            new SeriesPart { Position = 1, Title = "Dead Letter Box", ThiefGuildUrl = "https://www.thiefguild.com/fanmissions/2684/p1" },
+            new SeriesPart { Position = 2, Title = "The Hidden City" }
+        });
+        await repo.AddAsync(new FanMission { Title = "The Hidden City", Game = GameTitle.Thief2, FolderPath = "p2", SeriesId = series.Id, SeriesPosition = 2, ThiefGuildUrl = "https://www.thiefguild.com/fanmissions/2682/p2" });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.SortField = SortField.Title;
+        await vm.LoadCommand.ExecuteAsync(null);
+        return (repo, seriesRepo, vm);
+    }
+
+    [Fact]
+    public async Task Load_ShowsMissingPartPlaceholders()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+
+        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[0]);
+        Assert.Equal("Dead Letter Box", Assert.IsType<MissingPartRow>(vm.VisibleRows[1]).Part.Title);
+        Assert.IsType<MissionRow>(vm.VisibleRows[2]);
+    }
+
+    [Fact]
+    public async Task StatusFilter_HidesMissingPartPlaceholders()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+
+        vm.StatusFilter = MissionStatus.NotPlayed;
+
+        Assert.Empty(vm.VisibleRows.OfType<MissingPartRow>());
+    }
+
+    [Fact]
+    public async Task GameFilter_KeepsMissingPartPlaceholders()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+
+        vm.GameFilter = GameTitle.Thief2;
+
+        Assert.Single(vm.VisibleRows.OfType<MissingPartRow>());
+    }
+
+    [Fact]
+    public async Task SelectingMissingPart_DisablesMissionCommandsAndOffersItsThiefGuildPage()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        vm.SelectedRow = vm.VisibleRows.OfType<MissingPartRow>().Single();
+
+        Assert.Null(vm.SelectedMission);
+        Assert.True(vm.IsMissingPartSelected);
+        Assert.False(vm.ShowMissionMenuItems);
+        Assert.False(vm.DeleteSelectedCommand.CanExecute(null));
+        Assert.True(vm.CanOpenSelectedOnThiefGuild);
+        Assert.Equal("https://www.thiefguild.com/fanmissions/2684/p1", vm.SelectedThiefGuildUrl);
+    }
+
+    [Fact]
+    public async Task SelectingMissionRow_OffersItsThiefGuildPage()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        Assert.True(vm.ShowMissionMenuItems);
+        Assert.Equal("https://www.thiefguild.com/fanmissions/2682/p2", vm.SelectedThiefGuildUrl);
+        Assert.False(vm.CanOpenSelectedSeriesOnThiefGuild);
+    }
+
+    [Fact]
+    public async Task SelectingThiefGuildSeriesHeader_OffersSeriesPage()
+    {
+        var (_, _, vm) = await MakeWithPartsAsync();
+
+        vm.SelectedRow = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        Assert.False(vm.ShowMissionMenuItems);
+        Assert.False(vm.CanOpenSelectedOnThiefGuild);
+        Assert.True(vm.CanOpenSelectedSeriesOnThiefGuild);
+        Assert.Equal("https://www.thiefguild.com/fanmissions?series=66445", vm.SelectedSeriesThiefGuildUrl);
+    }
+
+    [Fact]
+    public void IsThiefGuildRefreshRunning_TogglesCanRefresh()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        vm.IsThiefGuildRefreshRunning = true;
+
+        Assert.False(vm.CanRefreshThiefGuild);
+    }
+
+    [Fact]
+    public async Task ApplyThiefGuildMetadataAsync_StoresMetadataAndParts()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        await repo.AddAsync(new FanMission { Title = "In the Lion's Den", FolderPath = "p3" });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.ApplyThiefGuildMetadataAsync(vm.VisibleMissions.Single(), new ThiefGuildLookupResult(
+            "Schattengilde", 2026, "City", "https://www.thiefguild.com/fanmissions/66450/x",
+            new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3, new[]
+            {
+                new ThiefGuildSeriesPartInfo(1, "Dead Letter Box", "https://www.thiefguild.com/fanmissions/2684/p1"),
+                new ThiefGuildSeriesPartInfo(2, "The Hidden City", "https://www.thiefguild.com/fanmissions/2682/p2"),
+                new ThiefGuildSeriesPartInfo(3, "In the Lion's Den", null)
+            }),
+            Rating: 8.5, RatingCount: 12, CampaignMissionCount: 1));
+
+        var mission = repo.Missions.Single();
+        Assert.Equal(8.5, mission.ThiefGuildRating);
+        Assert.Equal(ThiefGuildMetadata.CurrentVersion, mission.ThiefGuildMetadataVersion);
+        Assert.Equal(2, vm.VisibleRows.OfType<MissingPartRow>().Count());
+    }
 }
