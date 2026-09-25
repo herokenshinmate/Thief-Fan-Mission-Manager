@@ -153,6 +153,18 @@ public class SeriesRepositoryTests : IDisposable
         Assert.Equal("Kept", Assert.Single(await repo.GetAllPartsAsync()).Title);
     }
 
+    [Fact]
+    public async Task SetAllExpandedAsync_UpdatesEverySeries()
+    {
+        var repo = new SeriesRepository(CreateContext);
+        await repo.GetOrCreateByNameAsync("A");
+        await repo.GetOrCreateByNameAsync("B");
+
+        await repo.SetAllExpandedAsync(false);
+
+        Assert.All(await repo.GetAllAsync(), s => Assert.False(s.IsExpanded));
+    }
+
     public void Dispose()
     {
         try

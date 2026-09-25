@@ -409,15 +409,6 @@ public partial class MainWindow : FluentWindow
         scanWindow.ShowDialog();
     }
 
-    private async void QuickScanDownloads_Click(object sender, RoutedEventArgs e)
-    {
-        var settings = await _settingsRepository.GetAsync();
-        var scanViewModel = new ScanViewModel(_directoryReader, _archiveFileReader, _missionRepository, _ignoredFmRepository);
-        var scanWindow = new ScanWindow(scanViewModel, settings) { Owner = this };
-        scanWindow.Closed += async (_, _) => await _viewModel.LoadCommand.ExecuteAsync(null);
-        scanWindow.ShowDialog();
-    }
-
     private async void OpenIgnoreList_Click(object sender, RoutedEventArgs e)
     {
         var ignoreListViewModel = new IgnoreListViewModel(_ignoredFmRepository);
@@ -462,6 +453,30 @@ public partial class MainWindow : FluentWindow
             await OpenPropertiesForAsync(mission);
         else
             await _viewModel.DismissThiefGuildLookupAsync(mission);
+    }
+
+    private async void DeleteMission_Click(object sender, RoutedEventArgs e)
+    {
+        var mission = _viewModel.SelectedMission;
+        if (mission is null)
+            return;
+
+        var diskNote = mission.InstallStatus == InstallStatus.Installed
+            ? $"It's installed, so its folder will also be deleted from disk:\n{mission.FolderPath}\n\nThe downloaded archive is kept."
+            : "It isn't installed, so nothing on disk is touched.";
+
+        var confirmDialog = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = "Delete from Library",
+            Content = $"Remove \"{mission.Title}\" from your library?\n\n{diskNote}",
+            PrimaryButtonText = "Delete",
+            PrimaryButtonAppearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            CloseButtonText = "Cancel"
+        };
+
+        if (await confirmDialog.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            await _viewModel.DeleteSelectedCommand.ExecuteAsync(null);
     }
 
     private async void Uninstall_Click(object sender, RoutedEventArgs e)

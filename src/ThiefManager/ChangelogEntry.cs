@@ -7,6 +7,14 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.6", "2026-09-25", new[]
+        {
+            "The Play button is now bright green and larger whenever a mission can be played.",
+            "Added Collapse All (collapses every series, keeping the game banners open) and Expand All (opens every game and series) buttons.",
+            "Rate a mission straight from its right-click menu (Rate > 0 to 5 stars, or Not Rated).",
+            "Delete moved to the right-click menu as a red \"Delete from Library...\" item that asks for confirmation first, and now also deletes the mission's folder from disk when it's installed (the downloaded archive is kept).",
+            "Add Mission moved to the menu bar, and the redundant Quick Scan Downloads button was removed (use Scan for New Missions)."
+        }),
         new("3.9.5", "2026-09-25", new[]
         {
             "Removed the Game column from the mission list now that each game has its own banner; the Title column takes over its space. The list now sorts by Title by default, and Game is no longer offered as a sort option."

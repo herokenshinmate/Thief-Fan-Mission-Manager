@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:ThiefManager"
         xmlns:models="clr-namespace:ThiefManager.Models"
         xmlns:views="clr-namespace:ThiefManager.Views"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="700"
@@ -80,6 +81,11 @@
                     <ui:SymbolIcon Symbol="ArrowSync24"/>
                 </MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="_Add Mission..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="AddMission_Click">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Add24"/>
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="_Ignore List..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenIgnoreList_Click">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="EyeOff24"/>
@@ -151,25 +157,45 @@
             <ComboBox Width="110" Margin="0,0,12,6"
                       ItemsSource="{Binding InstallStatusFilterOptions}"
                       SelectedItem="{Binding InstallStatusFilterDisplay}"/>
-            <ui:Button Content="Add Mission" Click="AddMission_Click" Margin="0,0,8,6">
+            <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,12,6"
+                       FontSize="15" FontWeight="SemiBold" Padding="18,8" MinWidth="110"
+                       ToolTip="Play the selected mission.">
                 <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Add24"/>
+                    <ui:SymbolIcon Symbol="Play24" Filled="True"/>
+                </ui:Button.Icon>
+                <ui:Button.Style>
+                    <!-- Green and glowing only while there's something to play; disabled keeps the
+                         standard greyed-out look so it doesn't advertise a no-op. -->
+                    <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                        <Style.Triggers>
+                            <Trigger Property="IsEnabled" Value="True">
+                                <Setter Property="Background" Value="#FF2EA043"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderBrush" Value="#FF3FB950"/>
+                                <Setter Property="MouseOverBackground" Value="#FF3FB950"/>
+                                <Setter Property="MouseOverBorderBrush" Value="#FF56D364"/>
+                                <Setter Property="PressedBackground" Value="#FF238636"/>
+                                <Setter Property="PressedForeground" Value="White"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF2EA043" BlurRadius="14" ShadowDepth="0" Opacity="0.7"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Button.Style>
+            </ui:Button>
+            <ui:Button Content="Collapse All" Command="{Binding CollapseAllSeriesCommand}" Margin="0,0,8,6"
+                       ToolTip="Collapse every series (game banners stay open).">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowMinimizeVertical24"/>
                 </ui:Button.Icon>
             </ui:Button>
-            <ui:Button Content="Quick Scan Downloads" Click="QuickScanDownloads_Click" Margin="0,0,8,6"
-                    ToolTip="Scan both games' configured Downloads folders for new mission archives.">
+            <ui:Button Content="Expand All" Command="{Binding ExpandAllCommand}" Margin="0,0,0,6"
+                       ToolTip="Expand every game and every series.">
                 <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D"/>
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button Content="Play" Command="{Binding LaunchSelectedCommand}" Margin="0,0,8,6">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Play24"/>
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Margin="0,0,0,6">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Delete24"/>
+                    <ui:SymbolIcon Symbol="ArrowMaximizeVertical24"/>
                 </ui:Button.Icon>
             </ui:Button>
         </WrapPanel>
@@ -267,6 +293,44 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
+                    <MenuItem Header="Rate"
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Star24" Foreground="#FFFFD54F"/>
+                        </MenuItem.Icon>
+                        <MenuItem Header="★★★★★" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>5</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="★★★★☆" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>4</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="★★★☆☆" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>3</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="★★☆☆☆" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>2</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="★☆☆☆☆" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>1</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="☆☆☆☆☆" Command="{Binding SetSelectedRatingCommand}">
+                            <MenuItem.CommandParameter>
+                                <sys:Int32>0</sys:Int32>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="(Not Rated)" Command="{Binding SetSelectedRatingCommand}" CommandParameter="{x:Null}"/>
+                    </MenuItem>
                     <Separator Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <MenuItem Header="Install" Click="Install_Click"
                               Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -281,10 +345,10 @@
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}"
+                    <MenuItem Header="Delete from Library..." Click="DeleteMission_Click" Foreground="#FFE57373"
                               Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
-                            <ui:SymbolIcon Symbol="Delete24"/>
+                            <ui:SymbolIcon Symbol="Delete24" Foreground="#FFE57373"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>
