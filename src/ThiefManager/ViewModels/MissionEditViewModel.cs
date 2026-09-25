@@ -14,6 +14,8 @@ public partial class MissionEditViewModel : ObservableObject
     private readonly ISeriesRepository _seriesRepository;
     private int _id;
     private bool _thiefGuildLookupDismissed;
+    private InstallStatus _installStatus = InstallStatus.Installed;
+    private string? _archivePath;
     private int? _seriesId;
     private string? _originalSeriesName;
     private int? _originalSeriesPosition;
@@ -97,6 +99,8 @@ public partial class MissionEditViewModel : ObservableObject
         FolderPath = mission.FolderPath;
         ThiefGuildUrl = mission.ThiefGuildUrl;
         _thiefGuildLookupDismissed = mission.ThiefGuildLookupDismissed;
+        _installStatus = mission.InstallStatus;
+        _archivePath = mission.ArchivePath;
         _seriesId = mission.SeriesId;
         SeriesPosition = mission.SeriesPosition;
         _originalSeriesPosition = mission.SeriesPosition;
@@ -160,6 +164,8 @@ public partial class MissionEditViewModel : ObservableObject
             DateStarted = DateStarted,
             DateCompleted = DateCompleted,
             FolderPath = FolderPath,
+            InstallStatus = _installStatus,
+            ArchivePath = _archivePath,
             ThiefGuildUrl = ThiefGuildUrl,
             ThiefGuildLookupDismissed = _thiefGuildLookupDismissed,
             SeriesId = seriesId,

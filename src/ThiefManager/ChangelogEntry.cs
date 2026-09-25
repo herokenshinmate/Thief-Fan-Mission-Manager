@@ -7,6 +7,10 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.2", "2026-09-25", new[]
+        {
+            "Fixed saving a mission's Properties marking a Not Installed mission as Installed and forgetting its downloaded archive, which left it unable to be installed from the menu."
+        }),
         new("3.9.1", "2026-09-25", new[]
         {
             "Missions that are part of a series (e.g. The Book of Prophecy Parts 1–3) are now grouped under a collapsible header in the mission list, in series order, showing how many you've completed.",

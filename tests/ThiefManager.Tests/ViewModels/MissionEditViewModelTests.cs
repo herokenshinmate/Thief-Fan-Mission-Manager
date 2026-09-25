@@ -34,6 +34,28 @@ public class MissionEditViewModelTests
         new(repo, lookupService ?? new StubThiefGuildLookupService(null), seriesRepo ?? new FakeSeriesRepository(repo));
 
     [Fact]
+    public async Task SaveCommand_OnNotInstalledMission_KeepsInstallStatusAndArchivePath()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission
+        {
+            Title = "Archived",
+            FolderPath = "fms/archived",
+            InstallStatus = InstallStatus.NotInstalled,
+            ArchivePath = @"C:\Downloads\archived.zip"
+        });
+        var vm = MakeViewModel(repo);
+        vm.LoadFrom(repo.Missions.Single());
+        vm.Notes = "edited";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = repo.Missions.Single();
+        Assert.Equal(InstallStatus.NotInstalled, saved.InstallStatus);
+        Assert.Equal(@"C:\Downloads\archived.zip", saved.ArchivePath);
+    }
+
+    [Fact]
     public async Task SaveCommand_WithNoLoadedMission_AddsNewMissionToRepository()
     {
         var repo = new FakeMissionRepository();
