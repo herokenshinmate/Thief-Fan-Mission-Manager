@@ -55,7 +55,7 @@ public class SeriesBackfillService
                 {
                     await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
                     // Series columns only: `mission` was loaded before the loop and may be stale.
-                    await _missionRepository.ApplySeriesLookupAsync(mission.Id, mission.SeriesId, mission.SeriesPosition);
+                    await _missionRepository.ApplyThiefGuildMetadataAsync(mission);
                     if (mission.SeriesId is not null)
                         SeriesAssigned?.Invoke(this, EventArgs.Empty);
                 }

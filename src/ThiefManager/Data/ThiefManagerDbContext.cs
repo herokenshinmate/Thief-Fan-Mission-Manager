@@ -13,10 +13,14 @@ public class ThiefManagerDbContext : DbContext
     public DbSet<AppSettings> Settings => Set<AppSettings>();
     public DbSet<IgnoredFm> IgnoredFms => Set<IgnoredFm>();
     public DbSet<Series> Series => Set<Series>();
+    public DbSet<SeriesPart> SeriesParts => Set<SeriesPart>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         optionsBuilder.UseSqlite($"Data Source={_dbPath}");
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Series>().HasIndex(s => s.ThiefGuildSeriesId).IsUnique();
+        modelBuilder.Entity<SeriesPart>().HasIndex(p => p.SeriesId);
+    }
 }

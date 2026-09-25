@@ -21,4 +21,13 @@ public class FanMission
     public int? SeriesId { get; set; }
     public int? SeriesPosition { get; set; }
     public bool SeriesLookupChecked { get; set; }
+    public double? ThiefGuildRating { get; set; }
+    public int? ThiefGuildRatingCount { get; set; }
+    public int? CampaignMissionCount { get; set; }
+    public string? Description { get; set; }
+    public string? SequelOfTitle { get; set; }
+    public string? SequelOfUrl { get; set; }
+    public string? HasSequelTitle { get; set; }
+    public string? HasSequelUrl { get; set; }
+    public int ThiefGuildMetadataVersion { get; set; }
 }

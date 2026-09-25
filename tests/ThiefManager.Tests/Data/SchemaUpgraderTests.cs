@@ -57,6 +57,43 @@ public class SchemaUpgraderTests : IDisposable
         Assert.Empty(await new SeriesRepository(CreateContext).GetAllAsync());
     }
 
+    [Fact]
+    public async Task EnsureColumns_OnPreMetadataDatabase_AddsMetadataSchema()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                DROP TABLE "SeriesParts";
+                ALTER TABLE "FanMissions" DROP COLUMN "ThiefGuildRating";
+                ALTER TABLE "FanMissions" DROP COLUMN "ThiefGuildRatingCount";
+                ALTER TABLE "FanMissions" DROP COLUMN "CampaignMissionCount";
+                ALTER TABLE "FanMissions" DROP COLUMN "Description";
+                ALTER TABLE "FanMissions" DROP COLUMN "SequelOfTitle";
+                ALTER TABLE "FanMissions" DROP COLUMN "SequelOfUrl";
+                ALTER TABLE "FanMissions" DROP COLUMN "HasSequelTitle";
+                ALTER TABLE "FanMissions" DROP COLUMN "HasSequelUrl";
+                ALTER TABLE "FanMissions" DROP COLUMN "ThiefGuildMetadataVersion";
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var missionRepo = new MissionRepository(CreateContext);
+        var seriesRepo = new SeriesRepository(CreateContext);
+        await missionRepo.AddAsync(new FanMission { Title = "M", FolderPath = "m", ThiefGuildRating = 9.5, Description = "d" });
+        var series = await seriesRepo.GetOrCreateByNameAsync("S");
+        await seriesRepo.ReplacePartsAsync(series.Id, new[] { new SeriesPart { Position = 1, Title = "P1" } });
+        var mission = Assert.Single(await missionRepo.GetAllAsync());
+        Assert.Equal(9.5, mission.ThiefGuildRating);
+        Assert.Equal(0, mission.ThiefGuildMetadataVersion);
+        Assert.Equal("P1", Assert.Single(await seriesRepo.GetAllPartsAsync()).Title);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
