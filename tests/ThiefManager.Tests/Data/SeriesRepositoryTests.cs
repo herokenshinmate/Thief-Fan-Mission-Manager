@@ -16,7 +16,7 @@ public class SeriesRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetOrCreateByThiefGuildIdAsync_CreatesThenReusesAndRenames()
+    public async Task GetOrCreateByThiefGuildIdAsync_CreatesThenReusesWithoutRenaming()
     {
         var repo = new SeriesRepository(CreateContext);
 
@@ -25,9 +25,23 @@ public class SeriesRepositoryTests : IDisposable
 
         Assert.Equal(first.Id, second.Id);
         var stored = Assert.Single(await repo.GetAllAsync());
-        Assert.Equal("The Book of Prophecy", stored.Name);
+        Assert.Equal("Book of Prophecy", stored.Name);
         Assert.Equal(66445, stored.ThiefGuildSeriesId);
         Assert.True(stored.IsExpanded);
+    }
+
+    [Fact]
+    public async Task GetOrCreateByThiefGuildIdAsync_KeepsUserRenameAfterAnotherLookup()
+    {
+        var repo = new SeriesRepository(CreateContext);
+        var series = await repo.GetOrCreateByThiefGuildIdAsync(66445, "Book of Prophecy");
+
+        await repo.RenameAsync(series.Id, "My Custom Name");
+        var second = await repo.GetOrCreateByThiefGuildIdAsync(66445, "The Book of Prophecy");
+
+        Assert.Equal(series.Id, second.Id);
+        var stored = Assert.Single(await repo.GetAllAsync());
+        Assert.Equal("My Custom Name", stored.Name);
     }
 
     [Fact]

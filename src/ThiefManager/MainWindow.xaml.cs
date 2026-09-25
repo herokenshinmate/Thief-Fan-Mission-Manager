@@ -88,6 +88,9 @@ public partial class MainWindow : FluentWindow
         try
         {
             await _seriesBackfillService.RunAsync(progress, _backfillCancellation.Token);
+            // Reload so the in-memory missions carry SeriesLookupChecked=true; otherwise a later
+            // whole-row save could reset it to false.
+            await _viewModel.LoadCommand.ExecuteAsync(null);
         }
         catch (Exception)
         {
@@ -101,8 +104,18 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private async void SeriesBackfill_SeriesAssigned(object? sender, EventArgs e) =>
-        await _viewModel.LoadCommand.ExecuteAsync(null);
+    private async void SeriesBackfill_SeriesAssigned(object? sender, EventArgs e)
+    {
+        try
+        {
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+        }
+        catch (Exception)
+        {
+            // A failed mid-run refresh is harmless: the next load (or the reload once the
+            // backfill finishes) catches up.
+        }
+    }
 
     private async void RenameSeries_Click(object sender, RoutedEventArgs e)
     {

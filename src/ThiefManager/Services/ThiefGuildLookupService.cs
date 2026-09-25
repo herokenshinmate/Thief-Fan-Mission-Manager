@@ -77,6 +77,11 @@ public class ThiefGuildLookupService : IThiefGuildLookupService
         if (string.IsNullOrWhiteSpace(url))
             return null;
 
+        // A stored URL without a scheme (e.g. "www.thiefguild.com/...") would otherwise make
+        // HttpClient throw InvalidOperationException instead of failing gracefully.
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            return null;
+
         return await TryFetchDetailPageAsync(url);
     }
 

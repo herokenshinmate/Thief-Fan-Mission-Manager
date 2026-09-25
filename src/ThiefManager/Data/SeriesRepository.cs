@@ -26,9 +26,9 @@ public class SeriesRepository : ISeriesRepository
 
         if (existing is not null)
         {
+            // Don't overwrite a name the user may have set; only a newly created series takes
+            // the name from Thief Guild.
             existing.ThiefGuildSeriesId = thiefGuildSeriesId;
-            if (trimmedName.Length > 0)
-                existing.Name = trimmedName;
             await db.SaveChangesAsync();
             return existing;
         }

@@ -7,9 +7,10 @@ public interface ISeriesRepository
     Task<List<Series>> GetAllAsync();
 
     /// <summary>
-    /// Returns the series with this Thief Guild id (renaming it if Thief Guild's name changed).
-    /// Failing that, adopts a manually-created series with the same name and no Thief Guild id,
-    /// so a series typed by hand and later found on Thief Guild stays one group. Otherwise creates it.
+    /// Returns the series with this Thief Guild id. Its name is never changed by this call, so a
+    /// user's rename survives later lookups. Failing that, adopts a manually-created series with
+    /// the same name and no Thief Guild id, so a series typed by hand and later found on Thief
+    /// Guild stays one group. Otherwise creates it, using the given name.
     /// </summary>
     Task<Series> GetOrCreateByThiefGuildIdAsync(int thiefGuildSeriesId, string name);
 

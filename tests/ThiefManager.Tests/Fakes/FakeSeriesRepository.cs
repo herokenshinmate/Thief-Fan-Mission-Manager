@@ -21,9 +21,9 @@ public class FakeSeriesRepository : ISeriesRepository
                 && string.Equals(s.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
         if (existing is not null)
         {
+            // Don't overwrite a name the user may have set; only a newly created series takes
+            // the name from Thief Guild.
             existing.ThiefGuildSeriesId = thiefGuildSeriesId;
-            if (trimmedName.Length > 0)
-                existing.Name = trimmedName;
             return Task.FromResult(existing);
         }
 
