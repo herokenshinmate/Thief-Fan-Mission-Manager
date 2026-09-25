@@ -17,6 +17,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ISeriesRepository _seriesRepository;
     private List<FanMission> _allMissions = new();
     private List<Series> _allSeries = new();
+    private List<SeriesPart> _allParts = new();
 
     public MainViewModel(
         IMissionRepository missionRepository,
@@ -46,6 +47,34 @@ public partial class MainViewModel : ObservableObject
     public IReadOnlyList<FanMission> VisibleMissions => VisibleRows.OfType<MissionRow>().Select(r => r.Mission).ToList();
 
     public bool IsSeriesHeaderSelected => SelectedRow is SeriesHeaderRow;
+
+    public bool IsMissingPartSelected => SelectedRow is MissingPartRow;
+
+    /// <summary>Mission-specific context menu items apply to mission rows (or no selection) only.</summary>
+    public bool ShowMissionMenuItems => SelectedRow is not SeriesHeaderRow and not MissingPartRow;
+
+    public string? SelectedThiefGuildUrl => SelectedRow switch
+    {
+        MissingPartRow part => part.Part.ThiefGuildUrl,
+        MissionRow mission => mission.Mission.ThiefGuildUrl,
+        _ => null
+    };
+
+    public bool CanOpenSelectedOnThiefGuild => !string.IsNullOrWhiteSpace(SelectedThiefGuildUrl);
+
+    public string? SelectedSeriesThiefGuildUrl => SelectedRow is SeriesHeaderRow { Series.ThiefGuildSeriesId: int seriesId }
+        ? $"https://www.thiefguild.com/fanmissions?series={seriesId}"
+        : null;
+
+    public bool CanOpenSelectedSeriesOnThiefGuild => SelectedSeriesThiefGuildUrl is not null;
+
+    /// <summary>True while the startup backfill or a manual refresh is fetching from Thief Guild.</summary>
+    [ObservableProperty]
+    private bool isThiefGuildRefreshRunning;
+
+    public bool CanRefreshThiefGuild => !IsThiefGuildRefreshRunning;
+
+    partial void OnIsThiefGuildRefreshRunningChanged(bool value) => OnPropertyChanged(nameof(CanRefreshThiefGuild));
 
     public IAsyncRelayCommand LoadCommand { get; }
     public IRelayCommand LaunchSelectedCommand { get; }
@@ -184,6 +213,12 @@ public partial class MainViewModel : ObservableObject
     {
         SelectedMission = (value as MissionRow)?.Mission;
         OnPropertyChanged(nameof(IsSeriesHeaderSelected));
+        OnPropertyChanged(nameof(IsMissingPartSelected));
+        OnPropertyChanged(nameof(ShowMissionMenuItems));
+        OnPropertyChanged(nameof(SelectedThiefGuildUrl));
+        OnPropertyChanged(nameof(CanOpenSelectedOnThiefGuild));
+        OnPropertyChanged(nameof(SelectedSeriesThiefGuildUrl));
+        OnPropertyChanged(nameof(CanOpenSelectedSeriesOnThiefGuild));
         UngroupSelectedSeriesCommand.NotifyCanExecuteChanged();
     }
 
@@ -217,6 +252,7 @@ public partial class MainViewModel : ObservableObject
     {
         _allMissions = await _missionRepository.GetAllAsync();
         _allSeries = await _seriesRepository.GetAllAsync();
+        _allParts = await _seriesRepository.GetAllPartsAsync();
         ApplyQuery();
     }
 
@@ -228,7 +264,11 @@ public partial class MainViewModel : ObservableObject
         var selectedSeriesId = (SelectedRow as SeriesHeaderRow)?.Series.Id;
 
         var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter).ToList();
-        var rows = MissionListBuilder.Build(filtered, _allMissions, _allSeries, SortField, SortAscending);
+        // Placeholders aren't missions, so only show them when no mission-level filter is active;
+        // the Game filter is fine since it can't make a missing part less missing.
+        var includeMissingParts = StatusFilter is null && InstallStatusFilter is null
+            && string.IsNullOrWhiteSpace(TagFilter) && string.IsNullOrWhiteSpace(AuthorFilter);
+        var rows = MissionListBuilder.Build(filtered, _allMissions, _allSeries, SortField, SortAscending, _allParts, includeMissingParts);
 
         VisibleRows.Clear();
         foreach (var row in rows)
@@ -269,6 +309,7 @@ public partial class MainViewModel : ObservableObject
         _allMissions.RemoveAll(m => m.Id == id);
         await _seriesRepository.DeleteOrphansAsync();
         _allSeries = await _seriesRepository.GetAllAsync();
+        _allParts = await _seriesRepository.GetAllPartsAsync();
         SelectedMission = null;
         ApplyQuery();
     }
@@ -326,23 +367,16 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Applies a successful Thief Guild lookup to a mission: fills in only the fields that
-    /// are currently blank (never overwriting anything already entered), assigns it to a series
-    /// when Thief Guild found one, and records the matched URL so it isn't looked up again.
+    /// Applies a successful Thief Guild lookup to a mission: see ThiefGuildMetadataApplier for which
+    /// fields are overwritten versus only filled when blank, and SeriesAssigner for the series.
     /// </summary>
     public async Task ApplyThiefGuildMetadataAsync(FanMission mission, ThiefGuildLookupResult result)
     {
-        if (string.IsNullOrWhiteSpace(mission.Author))
-            mission.Author = result.Author;
-        if (mission.ReleaseYear is null)
-            mission.ReleaseYear = result.ReleaseYear;
-        if (string.IsNullOrWhiteSpace(mission.Tags))
-            mission.Tags = result.Tags;
-        mission.ThiefGuildUrl = result.Url;
-
+        ThiefGuildMetadataApplier.Apply(mission, result);
         await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
         await _missionRepository.UpdateAsync(mission);
         _allSeries = await _seriesRepository.GetAllAsync();
+        _allParts = await _seriesRepository.GetAllPartsAsync();
         ApplyQuery();
     }
 
