@@ -12,6 +12,9 @@ of what you've installed, what you've played, your ratings and notes, and
 pulls in ratings and details from [Thief Guild](https://www.thiefguild.com)
 so you don't have to track any of it by hand.
 
+**📖 New here? See [`docs/USAGE.md`](docs/USAGE.md) for a full walkthrough
+of setup, cataloging, and everyday use.**
+
 ## Features
 
 - **Catalog** every FM for both games in one list — status (Not Played,
@@ -34,9 +37,6 @@ so you don't have to track any of it by hand.
 - **Self-updating**: new versions download in the background and a
   "Restart to update" link appears when one's ready. See Help > Changelog
   for what changed, or Check for Updates in About.
-
-See [`docs/USAGE.md`](docs/USAGE.md) for a walkthrough of first-run setup,
-cataloging, and everyday use.
 
 ## Installing
 
