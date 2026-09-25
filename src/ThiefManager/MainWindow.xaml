@@ -11,6 +11,47 @@
         Title="Thief FM Manager" Height="650" Width="1300" MinHeight="500" MinWidth="700"
         Icon="pack://application:,,,/Assets/AppIcon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
+    <ui:FluentWindow.Resources>
+        <Style x:Key="GameBannerItemStyle" TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border x:Name="BannerBorder" Background="{StaticResource BannerBackgroundBrush}"
+                                BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1"
+                                CornerRadius="4" Margin="0,6,0,4" Padding="8,6" SnapsToDevicePixels="True">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="{Binding ChevronGlyph}" Style="{StaticResource SeriesChevronButtonStyle}" FontSize="14"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.ToggleGameExpandedCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}"/>
+                                <Grid Width="32" Height="32" Margin="4,0,10,0" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="Games24" FontSize="28"
+                                                   Foreground="{Binding Game, Converter={StaticResource GameTitleToBrushConverter}}"/>
+                                    <Image Source="{Binding Game, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
+                                </Grid>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Game, Converter={StaticResource GameTitleToDisplayNameConverter}}"
+                                               FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding StatsText}" FontSize="12" Foreground="{StaticResource MutedForegroundBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BannerBorder" Property="BorderBrush" Value="{StaticResource AccentGoldBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="BannerBorder" Property="BorderBrush" Value="{StaticResource AccentGoldBrush}"/>
+                                <Setter TargetName="BannerBorder" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </ui:FluentWindow.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -145,10 +186,19 @@
                   MouseRightButtonUp="MissionList_MouseRightButtonUp"
                   SizeChanged="MissionListView_SizeChanged"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  ItemContainerStyle="{StaticResource GridViewListViewItemStyle}"
                   GridViewColumnHeader.Click="MissionListView_ColumnHeaderClick">
+            <ListView.ItemContainerStyleSelector>
+                <views:MissionListItemStyleSelector RowStyle="{StaticResource GridViewListViewItemStyle}"
+                                                    BannerStyle="{StaticResource GameBannerItemStyle}"/>
+            </ListView.ItemContainerStyleSelector>
             <ListView.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="Expand / Collapse Game" Command="{Binding ToggleGameExpandedCommand}"
+                              Visibility="{Binding IsGameHeaderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="ChevronUpDown24"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Rename Series..." Click="RenameSeries_Click"
                               Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
@@ -247,10 +297,18 @@
                             <views:MissionListRowTemplateSelector>
                                 <views:MissionListRowTemplateSelector.MissionTemplate>
                                     <DataTemplate>
-                                        <TextBlock x:Name="TitleText" Text="{Binding DisplayTitle}" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel x:Name="TitlePanel" Orientation="Horizontal">
+                                            <Border Background="{StaticResource CampaignBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding CampaignBadgeText, Converter={StaticResource NullToVisibilityConverter}}">
+                                                <TextBlock Text="{Binding CampaignBadgeText}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource CampaignAccentBrush}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding DisplayTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <DataTemplate.Triggers>
                                             <DataTrigger Binding="{Binding IsSeriesMember}" Value="True">
-                                                <Setter TargetName="TitleText" Property="Margin" Value="22,0,0,0"/>
+                                                <Setter TargetName="TitlePanel" Property="Margin" Value="22,0,0,0"/>
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>
@@ -262,6 +320,10 @@
                                                     Command="{Binding DataContext.ToggleSeriesExpandedCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     CommandParameter="{Binding}"/>
                                             <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+                                            <Border Background="{StaticResource SeriesBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="SERIES" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource SeriesAccentBrush}"/>
+                                            </Border>
                                             <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                     </DataTemplate>

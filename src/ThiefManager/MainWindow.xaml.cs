@@ -323,6 +323,12 @@ public partial class MainWindow : FluentWindow
             return;
         }
 
+        if (_viewModel.SelectedRow is GameHeaderRow)
+        {
+            await _viewModel.ToggleGameExpandedCommand.ExecuteAsync(null);
+            return;
+        }
+
         if (_viewModel.SelectedRow is SeriesHeaderRow)
             await _viewModel.ToggleSeriesExpandedCommand.ExecuteAsync(null);
         else
