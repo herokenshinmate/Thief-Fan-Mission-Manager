@@ -41,7 +41,7 @@ public partial class App : Application
         var thiefGuildLookupService = new ThiefGuildLookupService();
         var thiefGuildBackfillService = new ThiefGuildBackfillService(missionRepository, seriesRepository, thiefGuildLookupService);
 
-        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository);
+        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository, settingsRepository);
         var settings = await settingsRepository.GetAsync();
 
         var isFirstRun = string.IsNullOrWhiteSpace(settings.Thief1FmFolder)

@@ -64,9 +64,11 @@ public class MainViewModelTests
         bool exeExists = true,
         RecordingArchiveInstaller? archiveInstaller = null,
         RecordingFolderDeleter? folderDeleter = null,
-        FakeSeriesRepository? seriesRepo = null) =>
+        FakeSeriesRepository? seriesRepo = null,
+        FakeSettingsRepository? settingsRepo = null) =>
         new(repo, MakeLaunchService(exeExists), archiveInstaller ?? new RecordingArchiveInstaller(),
-            folderDeleter ?? new RecordingFolderDeleter(), seriesRepo ?? new FakeSeriesRepository(repo));
+            folderDeleter ?? new RecordingFolderDeleter(), seriesRepo ?? new FakeSeriesRepository(repo),
+            settingsRepo ?? new FakeSettingsRepository());
 
     [Fact]
     public async Task LoadCommand_PopulatesVisibleMissionsFromRepository()
@@ -686,5 +688,69 @@ public class MainViewModelTests
 
         Assert.False(result);
         Assert.Null(vm.VisibleMissions.Single().SeriesId);
+    }
+
+    [Fact]
+    public async Task SelectingGameBanner_DisablesMissionCommandsAndHidesMissionMenu()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        vm.SelectedRow = vm.VisibleRows.OfType<GameHeaderRow>().Single();
+
+        Assert.Null(vm.SelectedMission);
+        Assert.True(vm.IsGameHeaderSelected);
+        Assert.False(vm.ShowMissionMenuItems);
+        Assert.False(vm.DeleteSelectedCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ToggleGameExpanded_CollapsesAndPersists()
+    {
+        var repo = new FakeMissionRepository();
+        var settings = new FakeSettingsRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m" });
+        var vm = MakeViewModel(repo, settingsRepo: settings);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.ToggleGameExpandedCommand.ExecuteAsync(vm.VisibleRows.OfType<GameHeaderRow>().Single());
+
+        Assert.Empty(vm.VisibleMissions);
+        Assert.False(vm.VisibleRows.OfType<GameHeaderRow>().Single().IsExpanded);
+        Assert.True((await settings.GetAsync()).Thief1Collapsed);
+    }
+
+    [Fact]
+    public async Task Load_AppliesCollapsedGamesFromSettings()
+    {
+        var repo = new FakeMissionRepository();
+        var settings = new FakeSettingsRepository();
+        await settings.SetGameCollapsedAsync(GameTitle.Thief2, true);
+        await repo.AddAsync(new FanMission { Title = "T1", Game = GameTitle.Thief1, FolderPath = "a" });
+        await repo.AddAsync(new FanMission { Title = "T2", Game = GameTitle.Thief2, FolderPath = "b" });
+        var vm = MakeViewModel(repo, settingsRepo: settings);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal(new[] { "T1" }, vm.VisibleMissions.Select(m => m.Title));
+        Assert.Equal(2, vm.VisibleRows.OfType<GameHeaderRow>().Count());
+    }
+
+    [Fact]
+    public async Task CollapsingSelectedMissionsGame_SelectsItsBanner()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.ToggleGameExpandedCommand.ExecuteAsync(vm.VisibleRows.OfType<GameHeaderRow>().Single());
+
+        Assert.Equal(GameTitle.Thief1, Assert.IsType<GameHeaderRow>(vm.SelectedRow).Game);
+        Assert.Null(vm.SelectedMission);
     }
 }
