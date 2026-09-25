@@ -44,7 +44,6 @@
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="BannerBorder" Property="BorderBrush" Value="{StaticResource AccentGoldBrush}"/>
-                                <Setter TargetName="BannerBorder" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -297,15 +296,15 @@
                             <views:MissionListRowTemplateSelector>
                                 <views:MissionListRowTemplateSelector.MissionTemplate>
                                     <DataTemplate>
-                                        <StackPanel x:Name="TitlePanel" Orientation="Horizontal">
-                                            <Border Background="{StaticResource CampaignBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
+                                        <DockPanel x:Name="TitlePanel" LastChildFill="True">
+                                            <Border DockPanel.Dock="Left" Background="{StaticResource CampaignBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
                                                     VerticalAlignment="Center"
                                                     Visibility="{Binding CampaignBadgeText, Converter={StaticResource NullToVisibilityConverter}}">
                                                 <TextBlock Text="{Binding CampaignBadgeText}" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="{StaticResource CampaignAccentBrush}"/>
                                             </Border>
                                             <TextBlock Text="{Binding DisplayTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                        </DockPanel>
                                         <DataTemplate.Triggers>
                                             <DataTrigger Binding="{Binding IsSeriesMember}" Value="True">
                                                 <Setter TargetName="TitlePanel" Property="Margin" Value="22,0,0,0"/>
@@ -315,17 +314,17 @@
                                 </views:MissionListRowTemplateSelector.MissionTemplate>
                                 <views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="{Binding ChevronGlyph}" Style="{StaticResource SeriesChevronButtonStyle}"
+                                        <DockPanel LastChildFill="True">
+                                            <Button DockPanel.Dock="Left" Content="{Binding ChevronGlyph}" Style="{StaticResource SeriesChevronButtonStyle}"
                                                     Command="{Binding DataContext.ToggleSeriesExpandedCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     CommandParameter="{Binding}"/>
-                                            <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
-                                            <Border Background="{StaticResource SeriesBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
+                                            <ui:SymbolIcon DockPanel.Dock="Left" Symbol="BookOpen24" Foreground="#FFC9A227" Margin="0,0,6,0"/>
+                                            <Border DockPanel.Dock="Left" Background="{StaticResource SeriesBadgeBackgroundBrush}" CornerRadius="3" Padding="5,0" Margin="0,0,6,0"
                                                     VerticalAlignment="Center">
                                                 <TextBlock Text="SERIES" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource SeriesAccentBrush}"/>
                                             </Border>
                                             <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
+                                        </DockPanel>
                                     </DataTemplate>
                                 </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
                                 <views:MissionListRowTemplateSelector.MissingPartTemplate>

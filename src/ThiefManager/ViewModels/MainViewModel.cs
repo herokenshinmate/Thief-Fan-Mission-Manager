@@ -276,7 +276,9 @@ public partial class MainViewModel : ObservableObject
         // Captured before Clear(): clearing makes the ListView push a null selection back.
         var selectedMissionId = SelectedMission?.Id;
         var selectedMissionSeriesId = SelectedMission?.SeriesId;
+        var selectedMissionSeriesGame = SelectedMission?.Game;
         var selectedSeriesId = (SelectedRow as SeriesHeaderRow)?.Series.Id;
+        var selectedSeriesGame = (SelectedRow as SeriesHeaderRow)?.CommonGame;
         var selectedGame = (SelectedRow as GameHeaderRow)?.Game;
         var selectedMissionGame = SelectedMission?.Game;
 
@@ -292,10 +294,12 @@ public partial class MainViewModel : ObservableObject
             VisibleRows.Add(row);
 
         SelectedRow = rows.FirstOrDefault(r => selectedMissionId is not null && r is MissionRow m && m.Mission.Id == selectedMissionId)
-            ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId)
-            ?? rows.FirstOrDefault(r => selectedMissionSeriesId is not null && r is SeriesHeaderRow h2 && h2.Series.Id == selectedMissionSeriesId)
+            ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId
+                && (selectedSeriesGame is null || h.CommonGame == selectedSeriesGame))
+            ?? rows.FirstOrDefault(r => selectedMissionSeriesId is not null && r is SeriesHeaderRow h2 && h2.Series.Id == selectedMissionSeriesId
+                && (selectedMissionSeriesGame is null || h2.CommonGame == selectedMissionSeriesGame))
             ?? rows.FirstOrDefault(r => selectedGame is not null && r is GameHeaderRow g && g.Game == selectedGame)
-            ?? rows.FirstOrDefault(r => selectedMissionGame is not null && r is GameHeaderRow g2 && g2.Game == selectedMissionGame);
+            ?? rows.FirstOrDefault(r => selectedMissionGame is GameTitle g0 && _collapsedGames.Contains(g0) && r is GameHeaderRow g2 && g2.Game == g0);
     }
 
     private void LaunchSelected()
@@ -468,7 +472,7 @@ public partial class MainViewModel : ObservableObject
         if (header is null)
             return;
 
-        var collapse = header.IsExpanded;
+        var collapse = !_collapsedGames.Contains(header.Game);
         if (collapse)
             _collapsedGames.Add(header.Game);
         else

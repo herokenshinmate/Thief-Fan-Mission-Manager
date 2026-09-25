@@ -753,4 +753,52 @@ public class MainViewModelTests
         Assert.Equal(GameTitle.Thief1, Assert.IsType<GameHeaderRow>(vm.SelectedRow).Game);
         Assert.Null(vm.SelectedMission);
     }
+
+    [Fact]
+    public async Task StatusChangeHidingSelectedMission_ClearsSelectionRatherThanSelectingBanner()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m", Status = MissionStatus.NotPlayed });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.StatusFilter = MissionStatus.NotPlayed;
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.SetSelectedStatusCommand.ExecuteAsync(MissionStatus.Completed);
+
+        Assert.Null(vm.SelectedRow);
+    }
+
+    [Fact]
+    public async Task ReselectingSpanningSeriesHeader_KeepsTheSameGamesHeader()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var series = await seriesRepo.GetOrCreateByNameAsync("Spanning Series");
+        await repo.AddAsync(new FanMission { Title = "T1 Part", Game = GameTitle.Thief1, FolderPath = "p1", SeriesId = series.Id, SeriesPosition = 1 });
+        await repo.AddAsync(new FanMission { Title = "T2 Part", Game = GameTitle.Thief2, FolderPath = "p2", SeriesId = series.Id, SeriesPosition = 2 });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SelectedRow = vm.VisibleRows.OfType<SeriesHeaderRow>().Single(h => h.CommonGame == GameTitle.Thief2);
+
+        vm.SortAscending = !vm.SortAscending;
+
+        var selectedHeader = Assert.IsType<SeriesHeaderRow>(vm.SelectedRow);
+        Assert.Equal(GameTitle.Thief2, selectedHeader.CommonGame);
+    }
+
+    [Fact]
+    public async Task SelectedGameBanner_SurvivesSortChange()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedRow = vm.VisibleRows.OfType<GameHeaderRow>().Single(g => g.Game == GameTitle.Thief1);
+
+        vm.SortAscending = !vm.SortAscending;
+
+        Assert.Equal(GameTitle.Thief1, Assert.IsType<GameHeaderRow>(vm.SelectedRow).Game);
+    }
 }
