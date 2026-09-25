@@ -7,6 +7,10 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.5", "2026-09-25", new[]
+        {
+            "Removed the Game column from the mission list now that each game has its own banner; the Title column takes over its space. The list now sorts by Title by default, and Game is no longer offered as a sort option."
+        }),
         new("3.9.4", "2026-09-25", new[]
         {
             "The mission list is now divided into a large banner per game (Thief 1, then Thief 2) showing how many missions you have, have completed and have installed; click a banner's arrow or double-click it to collapse that game, and the app remembers which games you collapsed.",
