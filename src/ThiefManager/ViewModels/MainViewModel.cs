@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IFolderDeleter _folderDeleter;
     private readonly ISeriesRepository _seriesRepository;
     private readonly ISettingsRepository _settingsRepository;
+    private readonly IUpdateService _updateService;
     private List<FanMission> _allMissions = new();
     private List<Series> _allSeries = new();
     private List<SeriesPart> _allParts = new();
@@ -27,7 +28,8 @@ public partial class MainViewModel : ObservableObject
         IArchiveInstaller archiveInstaller,
         IFolderDeleter folderDeleter,
         ISeriesRepository seriesRepository,
-        ISettingsRepository settingsRepository)
+        ISettingsRepository settingsRepository,
+        IUpdateService updateService)
     {
         _missionRepository = missionRepository;
         _launchService = launchService;
@@ -35,6 +37,7 @@ public partial class MainViewModel : ObservableObject
         _folderDeleter = folderDeleter;
         _seriesRepository = seriesRepository;
         _settingsRepository = settingsRepository;
+        _updateService = updateService;
         LoadCommand = new AsyncRelayCommand(LoadAsync);
         LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
         DeleteSelectedCommand = new AsyncRelayCommand(DeleteSelectedAsync, () => SelectedMission is not null);
@@ -47,6 +50,7 @@ public partial class MainViewModel : ObservableObject
         SetSelectedRatingCommand = new AsyncRelayCommand<int?>(SetSelectedRatingAsync, _ => SelectedMission is not null);
         CollapseAllSeriesCommand = new AsyncRelayCommand(CollapseAllSeriesAsync);
         ExpandAllCommand = new AsyncRelayCommand(ExpandAllAsync);
+        CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync);
     }
 
     public ObservableCollection<MissionListRow> VisibleRows { get; } = new();
@@ -104,6 +108,91 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>Expands every series and every game.</summary>
     public IAsyncRelayCommand ExpandAllCommand { get; }
+
+    public IAsyncRelayCommand CheckForUpdatesCommand { get; }
+
+    /// <summary>The version of a downloaded update waiting for "Restart to update", or null.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsUpdateReady))]
+    private string? updateReadyVersion;
+
+    [ObservableProperty]
+    private string? updateReleaseNotes;
+
+    /// <summary>The result of a manual "Check for Updates", shown in the About window.</summary>
+    [ObservableProperty]
+    private string? updateCheckMessage;
+
+    public bool IsUpdateReady => UpdateReadyVersion is not null;
+
+    /// <summary>
+    /// The quiet check on launch: skipped for dev (non-installed) runs, and any failure (offline,
+    /// GitHub unavailable) is swallowed because an automatic check should never nag.
+    /// </summary>
+    public async Task CheckForUpdatesOnStartupAsync()
+    {
+        if (!_updateService.IsInstalled)
+            return;
+
+        try
+        {
+            if (await _updateService.CheckAndDownloadAsync() is { } update)
+                SetUpdateReady(update);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        if (!_updateService.IsInstalled)
+        {
+            UpdateCheckMessage = "Updates are only available in the installed version.";
+            return;
+        }
+
+        UpdateCheckMessage = "Checking for updates…";
+        try
+        {
+            var update = await _updateService.CheckAndDownloadAsync();
+            if (update is null)
+            {
+                UpdateCheckMessage = $"You're up to date (version {AppVersion.Current}).";
+            }
+            else
+            {
+                SetUpdateReady(update);
+                UpdateCheckMessage = $"Version {update.Version} is ready — restart to update.";
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateCheckMessage = $"Couldn't check for updates: {ex.Message}";
+        }
+    }
+
+    private void SetUpdateReady(AvailableUpdate update)
+    {
+        UpdateReleaseNotes = update.ReleaseNotesMarkdown;
+        UpdateReadyVersion = update.Version;
+    }
+
+    /// <summary>
+    /// Applies a downloaded update and restarts. Returns false, without doing anything, when a
+    /// Thief Guild refresh is running and the caller hasn't confirmed — the window then asks the
+    /// user. With no update ready there's nothing to do and it returns true.
+    /// </summary>
+    public bool TryRestartToUpdate(bool confirmedDespiteRefresh)
+    {
+        if (!IsUpdateReady)
+            return true;
+        if (IsThiefGuildRefreshRunning && !confirmedDespiteRefresh)
+            return false;
+
+        _updateService.ApplyAndRestart();
+        return true;
+    }
 
     public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
