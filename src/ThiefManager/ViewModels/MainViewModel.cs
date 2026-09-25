@@ -14,27 +14,38 @@ public partial class MainViewModel : ObservableObject
     private readonly LaunchService _launchService;
     private readonly IArchiveInstaller _archiveInstaller;
     private readonly IFolderDeleter _folderDeleter;
+    private readonly ISeriesRepository _seriesRepository;
     private List<FanMission> _allMissions = new();
+    private List<Series> _allSeries = new();
 
     public MainViewModel(
         IMissionRepository missionRepository,
         LaunchService launchService,
         IArchiveInstaller archiveInstaller,
-        IFolderDeleter folderDeleter)
+        IFolderDeleter folderDeleter,
+        ISeriesRepository seriesRepository)
     {
         _missionRepository = missionRepository;
         _launchService = launchService;
         _archiveInstaller = archiveInstaller;
         _folderDeleter = folderDeleter;
+        _seriesRepository = seriesRepository;
         LoadCommand = new AsyncRelayCommand(LoadAsync);
         LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
         DeleteSelectedCommand = new AsyncRelayCommand(DeleteSelectedAsync, () => SelectedMission is not null);
         SetSelectedStatusCommand = new AsyncRelayCommand<MissionStatus>(SetSelectedStatusAsync, _ => SelectedMission is not null);
         InstallSelectedCommand = new AsyncRelayCommand(InstallSelectedAsync, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.NotInstalled && SelectedMission.ArchivePath is not null);
         UninstallSelectedCommand = new AsyncRelayCommand(UninstallSelectedAsync, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
+        ToggleSeriesExpandedCommand = new AsyncRelayCommand<SeriesHeaderRow?>(ToggleSeriesExpandedAsync);
+        UngroupSelectedSeriesCommand = new AsyncRelayCommand(UngroupSelectedSeriesAsync, () => SelectedRow is SeriesHeaderRow);
     }
 
-    public ObservableCollection<FanMission> VisibleMissions { get; } = new();
+    public ObservableCollection<MissionListRow> VisibleRows { get; } = new();
+
+    /// <summary>The missions currently shown (series members of collapsed series excluded), in row order.</summary>
+    public IReadOnlyList<FanMission> VisibleMissions => VisibleRows.OfType<MissionRow>().Select(r => r.Mission).ToList();
+
+    public bool IsSeriesHeaderSelected => SelectedRow is SeriesHeaderRow;
 
     public IAsyncRelayCommand LoadCommand { get; }
     public IRelayCommand LaunchSelectedCommand { get; }
@@ -42,6 +53,8 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand<MissionStatus> SetSelectedStatusCommand { get; }
     public IAsyncRelayCommand InstallSelectedCommand { get; }
     public IAsyncRelayCommand UninstallSelectedCommand { get; }
+    public IAsyncRelayCommand<SeriesHeaderRow?> ToggleSeriesExpandedCommand { get; }
+    public IAsyncRelayCommand UngroupSelectedSeriesCommand { get; }
 
     public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
@@ -118,6 +131,13 @@ public partial class MainViewModel : ObservableObject
     private FanMission? selectedMission;
 
     [ObservableProperty]
+    private MissionListRow? selectedRow;
+
+    /// <summary>Progress of background work (the Thief Guild series backfill), shown in the status bar.</summary>
+    [ObservableProperty]
+    private string? backgroundStatus;
+
+    [ObservableProperty]
     private string? launchError;
 
     [ObservableProperty]
@@ -147,8 +167,27 @@ public partial class MainViewModel : ObservableObject
     }
     partial void OnSortAscendingChanged(bool value) => ApplyQuery();
 
+    partial void OnSelectedRowChanged(MissionListRow? value)
+    {
+        SelectedMission = (value as MissionRow)?.Mission;
+        OnPropertyChanged(nameof(IsSeriesHeaderSelected));
+        UngroupSelectedSeriesCommand.NotifyCanExecuteChanged();
+    }
+
     partial void OnSelectedMissionChanged(FanMission? value)
     {
+        if (value is null)
+        {
+            if (SelectedRow is MissionRow)
+                SelectedRow = null;
+        }
+        else if (SelectedRow is not MissionRow row || !ReferenceEquals(row.Mission, value))
+        {
+            var match = VisibleRows.OfType<MissionRow>().FirstOrDefault(r => ReferenceEquals(r.Mission, value));
+            if (match is not null)
+                SelectedRow = match;
+        }
+
         NotifyMissionCommandsCanExecuteChanged();
     }
 
@@ -164,15 +203,25 @@ public partial class MainViewModel : ObservableObject
     private async Task LoadAsync()
     {
         _allMissions = await _missionRepository.GetAllAsync();
+        _allSeries = await _seriesRepository.GetAllAsync();
         ApplyQuery();
     }
 
     private void ApplyQuery()
     {
-        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter);
-        VisibleMissions.Clear();
-        foreach (var mission in filtered)
-            VisibleMissions.Add(mission);
+        // Captured before Clear(): clearing makes the ListView push a null selection back.
+        var selectedMissionId = SelectedMission?.Id;
+        var selectedSeriesId = (SelectedRow as SeriesHeaderRow)?.Series.Id;
+
+        var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter).ToList();
+        var rows = MissionListBuilder.Build(filtered, _allMissions, _allSeries, SortField, SortAscending);
+
+        VisibleRows.Clear();
+        foreach (var row in rows)
+            VisibleRows.Add(row);
+
+        SelectedRow = rows.FirstOrDefault(r => selectedMissionId is not null && r is MissionRow m && m.Mission.Id == selectedMissionId)
+            ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId);
     }
 
     private void LaunchSelected()
@@ -200,8 +249,11 @@ public partial class MainViewModel : ObservableObject
         if (SelectedMission is null)
             return;
 
-        await _missionRepository.DeleteAsync(SelectedMission.Id);
-        _allMissions.RemoveAll(m => m.Id == SelectedMission.Id);
+        var id = SelectedMission.Id;
+        await _missionRepository.DeleteAsync(id);
+        _allMissions.RemoveAll(m => m.Id == id);
+        await _seriesRepository.DeleteOrphansAsync();
+        _allSeries = await _seriesRepository.GetAllAsync();
         SelectedMission = null;
         ApplyQuery();
     }
@@ -260,8 +312,8 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>
     /// Applies a successful Thief Guild lookup to a mission: fills in only the fields that
-    /// are currently blank (never overwriting anything already entered) and records the
-    /// matched URL so it isn't looked up again.
+    /// are currently blank (never overwriting anything already entered), assigns it to a series
+    /// when Thief Guild found one, and records the matched URL so it isn't looked up again.
     /// </summary>
     public async Task ApplyThiefGuildMetadataAsync(FanMission mission, ThiefGuildLookupResult result)
     {
@@ -273,7 +325,9 @@ public partial class MainViewModel : ObservableObject
             mission.Tags = result.Tags;
         mission.ThiefGuildUrl = result.Url;
 
+        await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
         await _missionRepository.UpdateAsync(mission);
+        _allSeries = await _seriesRepository.GetAllAsync();
         ApplyQuery();
     }
 
@@ -284,5 +338,36 @@ public partial class MainViewModel : ObservableObject
     {
         mission.ThiefGuildLookupDismissed = true;
         await _missionRepository.UpdateAsync(mission);
+    }
+
+    private async Task ToggleSeriesExpandedAsync(SeriesHeaderRow? header)
+    {
+        header ??= SelectedRow as SeriesHeaderRow;
+        if (header is null)
+            return;
+
+        var isExpanded = !header.Series.IsExpanded;
+        await _seriesRepository.SetExpandedAsync(header.Series.Id, isExpanded);
+        header.Series.IsExpanded = isExpanded;
+        ApplyQuery();
+    }
+
+    public async Task RenameSeriesAsync(Series series, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+            return;
+
+        await _seriesRepository.RenameAsync(series.Id, newName);
+        await LoadAsync();
+    }
+
+    private async Task UngroupSelectedSeriesAsync()
+    {
+        if (SelectedRow is not SeriesHeaderRow header)
+            return;
+
+        await _seriesRepository.DeleteAsync(header.Series.Id);
+        SelectedRow = null;
+        await LoadAsync();
     }
 }

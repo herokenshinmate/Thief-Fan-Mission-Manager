@@ -63,8 +63,10 @@ public class MainViewModelTests
         FakeMissionRepository repo,
         bool exeExists = true,
         RecordingArchiveInstaller? archiveInstaller = null,
-        RecordingFolderDeleter? folderDeleter = null) =>
-        new(repo, MakeLaunchService(exeExists), archiveInstaller ?? new RecordingArchiveInstaller(), folderDeleter ?? new RecordingFolderDeleter());
+        RecordingFolderDeleter? folderDeleter = null,
+        FakeSeriesRepository? seriesRepo = null) =>
+        new(repo, MakeLaunchService(exeExists), archiveInstaller ?? new RecordingArchiveInstaller(),
+            folderDeleter ?? new RecordingFolderDeleter(), seriesRepo ?? new FakeSeriesRepository(repo));
 
     [Fact]
     public async Task LoadCommand_PopulatesVisibleMissionsFromRepository()
@@ -311,6 +313,154 @@ public class MainViewModelTests
         Assert.Equal(2020, saved.ReleaseYear);
         Assert.Equal("Church, City", saved.Tags);
         Assert.Equal("https://www.thiefguild.com/fanmissions/1/mission", saved.ThiefGuildUrl);
+    }
+
+    private static async Task<(FakeMissionRepository Repo, FakeSeriesRepository SeriesRepo, MainViewModel Vm)> MakeWithSeriesAsync()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var series = await seriesRepo.GetOrCreateByNameAsync("The Book of Prophecy");
+        await repo.AddAsync(new FanMission { Title = "Part 3", Game = GameTitle.Thief2, FolderPath = "p3", SeriesId = series.Id, SeriesPosition = 3 });
+        await repo.AddAsync(new FanMission { Title = "Part 2", Game = GameTitle.Thief2, FolderPath = "p2", SeriesId = series.Id, SeriesPosition = 2 });
+        await repo.AddAsync(new FanMission { Title = "Alone", Game = GameTitle.Thief2, FolderPath = "a" });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        vm.SortField = SortField.Title;
+        await vm.LoadCommand.ExecuteAsync(null);
+        return (repo, seriesRepo, vm);
+    }
+
+    [Fact]
+    public async Task Load_GroupsSeriesMembersUnderHeader()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+
+        Assert.IsType<MissionRow>(vm.VisibleRows[0]);                       // Alone
+        Assert.IsType<SeriesHeaderRow>(vm.VisibleRows[1]);                  // The Book of Prophecy
+        Assert.Equal(new[] { "Alone", "Part 2", "Part 3" }, vm.VisibleMissions.Select(m => m.Title));
+    }
+
+    [Fact]
+    public async Task SelectingSeriesHeader_ClearsSelectedMissionAndDisablesMissionCommands()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+        vm.SelectedMission = vm.VisibleMissions.First(m => m.Title == "Part 2");
+
+        vm.SelectedRow = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        Assert.Null(vm.SelectedMission);
+        Assert.True(vm.IsSeriesHeaderSelected);
+        Assert.False(vm.LaunchSelectedCommand.CanExecute(null));
+        Assert.False(vm.DeleteSelectedCommand.CanExecute(null));
+        Assert.False(vm.SetSelectedStatusCommand.CanExecute(MissionStatus.Completed));
+    }
+
+    [Fact]
+    public async Task SelectingMissionRow_SetsSelectedMission()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+        var row = vm.VisibleRows.OfType<MissionRow>().First(r => r.Mission.Title == "Part 3");
+
+        vm.SelectedRow = row;
+
+        Assert.Same(row.Mission, vm.SelectedMission);
+        Assert.False(vm.IsSeriesHeaderSelected);
+    }
+
+    [Fact]
+    public async Task SetSelectedStatus_KeepsMissionSelected()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+        vm.SelectedMission = vm.VisibleMissions.First(m => m.Title == "Part 2");
+
+        await vm.SetSelectedStatusCommand.ExecuteAsync(MissionStatus.Completed);
+
+        Assert.Equal("Part 2", vm.SelectedMission?.Title);
+        Assert.Same(vm.SelectedMission, (vm.SelectedRow as MissionRow)?.Mission);
+    }
+
+    [Fact]
+    public async Task ToggleSeriesExpanded_CollapsesAndPersists()
+    {
+        var (_, seriesRepo, vm) = await MakeWithSeriesAsync();
+        var header = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        await vm.ToggleSeriesExpandedCommand.ExecuteAsync(header);
+
+        Assert.False(seriesRepo.SeriesList.Single().IsExpanded);
+        Assert.Equal(new[] { "Alone" }, vm.VisibleMissions.Select(m => m.Title));
+        Assert.Single(vm.VisibleRows.OfType<SeriesHeaderRow>());
+    }
+
+    [Fact]
+    public async Task ToggleSeriesExpanded_WithNullParameter_UsesSelectedHeader()
+    {
+        var (_, seriesRepo, vm) = await MakeWithSeriesAsync();
+        vm.SelectedRow = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        await vm.ToggleSeriesExpandedCommand.ExecuteAsync(null);
+
+        Assert.False(seriesRepo.SeriesList.Single().IsExpanded);
+        Assert.True(vm.IsSeriesHeaderSelected); // header stays selected after the rebuild
+    }
+
+    [Fact]
+    public async Task RenameSeriesAsync_UpdatesHeader()
+    {
+        var (_, _, vm) = await MakeWithSeriesAsync();
+        var header = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        await vm.RenameSeriesAsync(header.Series, "  Prophecy Saga ");
+
+        Assert.Equal("Prophecy Saga", vm.VisibleRows.OfType<SeriesHeaderRow>().Single().Series.Name);
+    }
+
+    [Fact]
+    public async Task UngroupSelectedSeries_DetachesMembersAndRemovesHeader()
+    {
+        var (repo, seriesRepo, vm) = await MakeWithSeriesAsync();
+        vm.SelectedRow = vm.VisibleRows.OfType<SeriesHeaderRow>().Single();
+
+        await vm.UngroupSelectedSeriesCommand.ExecuteAsync(null);
+
+        Assert.Empty(seriesRepo.SeriesList);
+        Assert.All(repo.Missions, m => Assert.Null(m.SeriesId));
+        Assert.Empty(vm.VisibleRows.OfType<SeriesHeaderRow>());
+    }
+
+    [Fact]
+    public async Task DeleteSelected_LastMemberOfSeries_RemovesOrphanSeries()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var series = await seriesRepo.GetOrCreateByNameAsync("Solo Series");
+        await repo.AddAsync(new FanMission { Title = "Only", FolderPath = "o", SeriesId = series.Id });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.DeleteSelectedCommand.ExecuteAsync(null);
+
+        Assert.Empty(seriesRepo.SeriesList);
+        Assert.Empty(vm.VisibleRows);
+    }
+
+    [Fact]
+    public async Task ApplyThiefGuildMetadataAsync_WithSeries_AssignsSeriesAndGroups()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        await repo.AddAsync(new FanMission { Title = "Part 3", FolderPath = "p3" });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var mission = vm.VisibleMissions.Single();
+
+        await vm.ApplyThiefGuildMetadataAsync(mission, new ThiefGuildLookupResult(
+            "Schattengilde", 2026, "City", "https://www.thiefguild.com/fanmissions/66450/x",
+            new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3)));
+
+        Assert.Equal(3, repo.Missions.Single().SeriesPosition);
+        Assert.True(repo.Missions.Single().SeriesLookupChecked);
+        Assert.Equal("The Book of Prophecy", vm.VisibleRows.OfType<SeriesHeaderRow>().Single().Series.Name);
     }
 
     [Fact]
