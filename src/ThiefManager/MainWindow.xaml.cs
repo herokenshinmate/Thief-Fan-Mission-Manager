@@ -24,8 +24,9 @@ public partial class MainWindow : FluentWindow
     private readonly Services.IThiefGuildLookupService _thiefGuildLookupService;
     private readonly IIgnoredFmRepository _ignoredFmRepository;
     private readonly ISeriesRepository _seriesRepository;
-    private readonly ThiefGuildBackfillService _seriesBackfillService;
+    private readonly ThiefGuildBackfillService _thiefGuildBackfillService;
     private readonly CancellationTokenSource _backfillCancellation = new();
+    private DateTime _lastBackfillReload = DateTime.MinValue;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
 
@@ -39,7 +40,7 @@ public partial class MainWindow : FluentWindow
         Services.IThiefGuildLookupService thiefGuildLookupService,
         IIgnoredFmRepository ignoredFmRepository,
         ISeriesRepository seriesRepository,
-        ThiefGuildBackfillService seriesBackfillService)
+        ThiefGuildBackfillService thiefGuildBackfillService)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -51,7 +52,7 @@ public partial class MainWindow : FluentWindow
         _thiefGuildLookupService = thiefGuildLookupService;
         _ignoredFmRepository = ignoredFmRepository;
         _seriesRepository = seriesRepository;
-        _seriesBackfillService = seriesBackfillService;
+        _thiefGuildBackfillService = thiefGuildBackfillService;
         DataContext = _viewModel;
 
         _sortableColumns = new Dictionary<System.Windows.Controls.GridViewColumn, SortField>
@@ -61,6 +62,8 @@ public partial class MainWindow : FluentWindow
             [StatusColumn] = SortField.Status,
             [InstallStatusColumn] = SortField.InstallStatus,
             [RatingColumn] = SortField.Rating,
+            [ThiefGuildRatingColumn] = SortField.ThiefGuildRating,
+            [MissionTypeColumn] = SortField.MissionType,
             [AuthorColumn] = SortField.Author,
             [TagsColumn] = SortField.Tags
         };
@@ -70,50 +73,109 @@ public partial class MainWindow : FluentWindow
         Loaded += async (_, _) =>
         {
             await _viewModel.LoadCommand.ExecuteAsync(null);
-            await RunSeriesBackfillAsync();
+            await RunThiefGuildBackfillAsync(refreshAll: false);
         };
         Loaded += (_, _) => ResizeTagsColumn();
         Loaded += (_, _) => UpdateColumnHeaderSortIndicators();
         Closed += (_, _) => _backfillCancellation.Cancel();
     }
 
-    private async Task RunSeriesBackfillAsync()
+    private async Task RunThiefGuildBackfillAsync(bool refreshAll)
     {
-        var progress = new Progress<(int Done, int Total)>(p =>
-            _viewModel.BackgroundStatus = p.Done < p.Total
-                ? $"Checking Thief Guild for series info… {p.Done}/{p.Total}"
-                : null);
+        if (_viewModel.IsThiefGuildRefreshRunning)
+            return;
 
-        _seriesBackfillService.MissionUpdated += SeriesBackfill_SeriesAssigned;
+        _viewModel.IsThiefGuildRefreshRunning = true;
+        var label = refreshAll ? "Refreshing Thief Guild data…" : "Updating Thief Guild data…";
+        var progress = new Progress<(int Done, int Total)>(p =>
+            _viewModel.BackgroundStatus = p.Done < p.Total ? $"{label} {p.Done}/{p.Total}" : null);
+
+        _thiefGuildBackfillService.MissionUpdated += ThiefGuildBackfill_MissionUpdated;
         try
         {
-            await _seriesBackfillService.RunAsync(progress, _backfillCancellation.Token);
-            // Reload so the in-memory missions carry SeriesLookupChecked=true; otherwise a later
-            // whole-row save could reset it to false.
+            await _thiefGuildBackfillService.RunAsync(progress, _backfillCancellation.Token, refreshAll);
+            // Reload so in-memory missions carry the fetched data; otherwise a later whole-row save
+            // from a stale copy could write old values back.
             await _viewModel.LoadCommand.ExecuteAsync(null);
         }
         catch (Exception)
         {
             // Best-effort: cancellation on close or a database hiccup just leaves the remaining
-            // missions unchecked, and they're retried on the next launch.
+            // missions at their old version, and they're retried on the next launch.
         }
         finally
         {
-            _seriesBackfillService.MissionUpdated -= SeriesBackfill_SeriesAssigned;
+            _thiefGuildBackfillService.MissionUpdated -= ThiefGuildBackfill_MissionUpdated;
             _viewModel.BackgroundStatus = null;
+            _viewModel.IsThiefGuildRefreshRunning = false;
         }
     }
 
-    private async void SeriesBackfill_SeriesAssigned(object? sender, EventArgs e)
+    private async void ThiefGuildBackfill_MissionUpdated(object? sender, EventArgs e)
     {
+        // Rebuilding the list resets its scroll and focus, so while a run is fetching a mission per
+        // second, refresh at most every few seconds; the run's final reload catches up the rest.
+        if (DateTime.UtcNow - _lastBackfillReload < TimeSpan.FromSeconds(5))
+            return;
+        _lastBackfillReload = DateTime.UtcNow;
+
         try
         {
             await _viewModel.LoadCommand.ExecuteAsync(null);
         }
         catch (Exception)
         {
-            // A failed mid-run refresh is harmless: the next load (or the reload once the
-            // backfill finishes) catches up.
+            // A failed mid-run refresh is harmless: the reload when the run finishes catches up.
+        }
+    }
+
+    private async void RefreshThiefGuildData_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsThiefGuildRefreshRunning)
+            return;
+
+        var linkedCount = (await _missionRepository.GetAllAsync()).Count(m => !string.IsNullOrWhiteSpace(m.ThiefGuildUrl));
+        if (linkedCount == 0)
+        {
+            await new Wpf.Ui.Controls.MessageBox
+            {
+                Owner = this,
+                Title = "Refresh Thief Guild Data",
+                Content = "No missions are linked to Thief Guild yet.",
+                CloseButtonText = "OK"
+            }.ShowDialogAsync();
+            return;
+        }
+
+        var confirm = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = "Refresh Thief Guild Data",
+            Content = $"Re-fetch Thief Guild data for {linkedCount} linked mission(s)?\n\nThis takes about {linkedCount} second(s) and runs in the background.",
+            PrimaryButtonText = "Refresh",
+            CloseButtonText = "Cancel"
+        };
+
+        if (await confirm.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            await RunThiefGuildBackfillAsync(refreshAll: true);
+    }
+
+    private void OpenOnThiefGuild_Click(object sender, RoutedEventArgs e) => OpenInBrowser(_viewModel.SelectedThiefGuildUrl);
+
+    private void OpenSeriesOnThiefGuild_Click(object sender, RoutedEventArgs e) => OpenInBrowser(_viewModel.SelectedSeriesThiefGuildUrl);
+
+    private static void OpenInBrowser(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            // No browser registered or a malformed stored URL; nothing useful to do.
         }
     }
 
@@ -243,6 +305,12 @@ public partial class MainWindow : FluentWindow
         // The chevron button already toggles on each click; don't toggle again on its double-click.
         if (e.OriginalSource is DependencyObject source && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) is not null)
             return;
+
+        if (_viewModel.SelectedRow is MissingPartRow missingPart)
+        {
+            OpenInBrowser(missingPart.Part.ThiefGuildUrl);
+            return;
+        }
 
         if (_viewModel.SelectedRow is SeriesHeaderRow)
             await _viewModel.ToggleSeriesExpandedCommand.ExecuteAsync(null);
