@@ -95,7 +95,7 @@
                       SelectedItem="{Binding StatusFilterDisplay}"/>
             <ui:SymbolIcon Symbol="ArrowSort24" Foreground="#FF64B5F6" Margin="0,0,4,6" VerticalAlignment="Center"/>
             <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,6"/>
-            <ComboBox Width="80" Margin="0,0,12,6"
+            <ComboBox Width="100" Margin="0,0,12,6"
                       ItemsSource="{Binding SortFieldOptions}"
                       SelectedItem="{Binding SortFieldDisplay}"/>
             <CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" VerticalAlignment="Center" Margin="0,0,12,6"/>

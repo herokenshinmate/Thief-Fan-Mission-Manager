@@ -48,10 +48,21 @@ public static class MissionQuery
             SortField.Rating => m.Rating ?? -1,
             SortField.Author => m.Author ?? string.Empty,
             SortField.Tags => m.Tags,
+            SortField.MissionType => m.CampaignMissionCount ?? 1,
             _ => m.Title
         };
 
-        query = ascending ? query.OrderBy(KeySelector) : query.OrderByDescending(KeySelector);
+        if (sortField == SortField.ThiefGuildRating)
+        {
+            // Unrated missions (no Thief Guild link, or no ratings yet) sink to the bottom whichever
+            // direction is chosen, so sorting descending shows the best-rated first.
+            var byPresence = query.OrderBy(m => m.ThiefGuildRating is null);
+            query = ascending ? byPresence.ThenBy(m => m.ThiefGuildRating) : byPresence.ThenByDescending(m => m.ThiefGuildRating);
+        }
+        else
+        {
+            query = ascending ? query.OrderBy(KeySelector) : query.OrderByDescending(KeySelector);
+        }
 
         return query.ToList();
     }

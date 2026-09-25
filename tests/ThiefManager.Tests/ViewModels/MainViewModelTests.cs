@@ -491,4 +491,18 @@ public class MainViewModelTests
         var saved = (await repo.GetAllAsync()).Single();
         Assert.True(saved.ThiefGuildLookupDismissed);
     }
+
+    [Fact]
+    public void SortFieldDisplay_MapsNewSortFields()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        vm.SortFieldDisplay = "TG Rating";
+        Assert.Equal(SortField.ThiefGuildRating, vm.SortField);
+        vm.SortField = SortField.MissionType;
+        Assert.Equal("Type", vm.SortFieldDisplay);
+        vm.SortField = SortField.InstallStatus;
+        Assert.Equal("Install Status", vm.SortFieldDisplay);
+        Assert.Contains("TG Rating", vm.SortFieldOptions);
+    }
 }

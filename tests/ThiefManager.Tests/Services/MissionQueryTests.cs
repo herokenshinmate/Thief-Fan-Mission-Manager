@@ -130,4 +130,36 @@ public class MissionQueryTests
 
         Assert.Equal(new[] { "NotInstalled" }, result.Select(m => m.Title));
     }
+
+    [Fact]
+    public void Apply_SortByThiefGuildRating_PutsUnratedLastInBothDirections()
+    {
+        var missions = new[]
+        {
+            new FanMission { Title = "Unrated" },
+            new FanMission { Title = "Low", ThiefGuildRating = 7.1 },
+            new FanMission { Title = "High", ThiefGuildRating = 9.5 }
+        };
+
+        var ascending = MissionQuery.Apply(missions, null, null, null, SortField.ThiefGuildRating, true);
+        var descending = MissionQuery.Apply(missions, null, null, null, SortField.ThiefGuildRating, false);
+
+        Assert.Equal(new[] { "Low", "High", "Unrated" }, ascending.Select(m => m.Title));
+        Assert.Equal(new[] { "High", "Low", "Unrated" }, descending.Select(m => m.Title));
+    }
+
+    [Fact]
+    public void Apply_SortByMissionType_TreatsUnknownAsSingleMission()
+    {
+        var missions = new[]
+        {
+            new FanMission { Title = "Campaign", CampaignMissionCount = 10 },
+            new FanMission { Title = "Unknown" },
+            new FanMission { Title = "Pair", CampaignMissionCount = 2 }
+        };
+
+        var result = MissionQuery.Apply(missions, null, null, null, SortField.MissionType, true);
+
+        Assert.Equal(new[] { "Unknown", "Pair", "Campaign" }, result.Select(m => m.Title));
+    }
 }

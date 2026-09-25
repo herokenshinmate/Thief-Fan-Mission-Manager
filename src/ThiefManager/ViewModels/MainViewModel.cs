@@ -113,12 +113,25 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? authorFilter;
 
-    public string[] SortFieldOptions { get; } = { "Title", "Game", "Status", "Install Status", "Rating", "Author", "Tags" };
+    private static readonly (SortField Field, string Name)[] SortFieldNames =
+    {
+        (SortField.Title, "Title"),
+        (SortField.Game, "Game"),
+        (SortField.Status, "Status"),
+        (SortField.InstallStatus, "Install Status"),
+        (SortField.Rating, "Rating"),
+        (SortField.Author, "Author"),
+        (SortField.Tags, "Tags"),
+        (SortField.ThiefGuildRating, "TG Rating"),
+        (SortField.MissionType, "Type")
+    };
+
+    public string[] SortFieldOptions { get; } = SortFieldNames.Select(n => n.Name).ToArray();
 
     public string SortFieldDisplay
     {
-        get => SortField == SortField.InstallStatus ? "Install Status" : SortField.ToString();
-        set => SortField = value == "Install Status" ? SortField.InstallStatus : Enum.Parse<SortField>(value);
+        get => SortFieldNames.First(n => n.Field == SortField).Name;
+        set => SortField = SortFieldNames.First(n => n.Name == value).Field;
     }
 
     [ObservableProperty]
