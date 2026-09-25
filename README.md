@@ -15,6 +15,8 @@ so you don't have to track any of it by hand.
 **📖 New here? See [`docs/USAGE.md`](docs/USAGE.md) for a full walkthrough
 of setup, cataloging, and everyday use.**
 
+<img width="1297" height="648" alt="image" src="https://github.com/user-attachments/assets/59c0a1e2-5700-4c0e-89b6-8ec8b581a294" />
+
 ## Features
 
 - **Catalog** every FM for both games in one list — status (Not Played,
