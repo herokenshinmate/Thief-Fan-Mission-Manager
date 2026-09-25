@@ -7,6 +7,11 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.7", "2026-09-25", new[]
+        {
+            "Thief FM Manager now has a proper installer and updates itself: new versions are downloaded in the background and a \"Restart to update\" link appears in the status bar when one is ready (see \"What's new\" for its changes).",
+            "Added Check for Updates to the About window."
+        }),
         new("3.9.6", "2026-09-25", new[]
         {
             "The Play button is now bright green and larger whenever a mission can be played.",
