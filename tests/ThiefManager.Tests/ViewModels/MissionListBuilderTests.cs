@@ -13,12 +13,23 @@ public class MissionListBuilderTests
 
     private static Series S(int id, string name, bool expanded = true) => new() { Id = id, Name = name, IsExpanded = expanded };
 
+    private static SeriesPart P(int seriesId, int position, string title) =>
+        new() { SeriesId = seriesId, Position = position, Title = title, ThiefGuildUrl = $"https://www.thiefguild.com/fanmissions/{position}/x" };
+
+    private static readonly SeriesPart[] BookParts = { P(1, 1, "Dead Letter Box"), P(1, 2, "The Hidden City"), P(1, 3, "In the Lion's Den") };
+
     private static string Describe(MissionListRow row) => row switch
     {
         SeriesHeaderRow h => $"[{h.Series.Name}]",
         MissionRow r when r.IsSeriesMember => $"  {r.Mission.Title}",
         MissionRow r => r.Mission.Title,
         _ => "?"
+    };
+
+    private static string DescribeWithParts(MissionListRow row) => row switch
+    {
+        MissingPartRow p => $"  ?{p.Part.Title}",
+        _ => Describe(row)
     };
 
     private static string[] Build(IReadOnlyList<FanMission> filteredSorted, IReadOnlyList<FanMission> all,
@@ -150,5 +161,71 @@ public class MissionListBuilderTests
 
         Assert.Equal(GameTitle.Thief1, headers.Single(h => h.Series.Name == "A").CommonGame);
         Assert.Null(headers.Single(h => h.Series.Name == "B").CommonGame);
+    }
+
+    [Fact]
+    public void Build_WithParts_InterleavesMissingPartsByPosition()
+    {
+        var missions = new[] { M(1, "Part 3", 1, 3), M(2, "Part 2", 1, 2) };
+
+        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true);
+
+        Assert.Equal(new[] { "[Book]", "  ?Dead Letter Box", "  Part 2", "  Part 3" }, rows.Select(DescribeWithParts));
+        Assert.Equal("Book (2 of 3 owned)", ((SeriesHeaderRow)rows[0]).HeaderText);
+        Assert.Equal("#1 · Dead Letter Box — not in library", ((MissingPartRow)rows[1]).DisplayTitle);
+    }
+
+    [Fact]
+    public void Build_WithPartsButMissingPartsExcluded_ShowsOnlyOwnedMembers()
+    {
+        var missions = new[] { M(1, "Part 3", 1, 3) };
+
+        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: false);
+
+        Assert.Equal(new[] { "[Book]", "  Part 3" }, rows.Select(DescribeWithParts));
+        Assert.Equal("Book (1 of 3 owned)", ((SeriesHeaderRow)rows[0]).HeaderText);
+    }
+
+    [Fact]
+    public void Build_CollapsedSeriesWithParts_EmitsOnlyHeader()
+    {
+        var missions = new[] { M(1, "Part 3", 1, 3) };
+
+        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book", expanded: false) }, SortField.Title, true, BookParts, includeMissingParts: true);
+
+        Assert.Equal(new[] { "[Book]" }, rows.Select(DescribeWithParts));
+    }
+
+    [Fact]
+    public void Build_OwnedMemberHiddenByFilter_IsNotShownAsMissing()
+    {
+        var shown = M(1, "Part 3", 1, 3, game: GameTitle.Thief2);
+        var hiddenByGameFilter = M(2, "Part 1", 1, 1, game: GameTitle.Thief1);
+
+        var rows = MissionListBuilder.Build(new[] { shown }, new[] { shown, hiddenByGameFilter }, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true);
+
+        Assert.Equal(new[] { "[Book]", "  ?The Hidden City", "  Part 3" }, rows.Select(DescribeWithParts));
+    }
+
+    [Fact]
+    public void Build_SeriesWithoutParts_KeepsPlainCount()
+    {
+        var missions = new[] { M(1, "P1", 1, 1) };
+
+        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, Array.Empty<SeriesPart>(), includeMissingParts: true);
+
+        Assert.Equal("Book (1)", ((SeriesHeaderRow)rows[0]).HeaderText);
+    }
+
+    [Fact]
+    public void MissionRow_ThiefGuildDisplays()
+    {
+        var rated = new MissionRow(new FanMission { ThiefGuildRating = 9.02, ThiefGuildRatingCount = 229, CampaignMissionCount = 10 }, false);
+        var single = new MissionRow(new FanMission { CampaignMissionCount = 1 }, false);
+
+        Assert.Equal("★ 9.02 (229)", rated.ThiefGuildRatingDisplay);
+        Assert.Equal("Campaign · 10", rated.MissionTypeDisplay);
+        Assert.Null(single.ThiefGuildRatingDisplay);
+        Assert.Null(single.MissionTypeDisplay);
     }
 }
