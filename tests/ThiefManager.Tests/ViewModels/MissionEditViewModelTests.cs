@@ -373,4 +373,122 @@ public class MissionEditViewModelTests
         Assert.Equal("The Book of Prophecy", vm.SeriesName);
         Assert.Equal(3, vm.SeriesPosition);
     }
+
+    private static FanMission MissionWithThiefGuildData() => new()
+    {
+        Title = "Endless Rain",
+        FolderPath = "er",
+        ThiefGuildUrl = "https://www.thiefguild.com/fanmissions/2535/endless-rain",
+        ThiefGuildRating = 9.02,
+        ThiefGuildRatingCount = 229,
+        CampaignMissionCount = 1,
+        Description = "A rainy night.",
+        SequelOfTitle = "Between These Dark Walls",
+        SequelOfUrl = "https://www.thiefguild.com/works/a",
+        HasSequelTitle = "The Chalice of Souls",
+        HasSequelUrl = "https://www.thiefguild.com/works/b",
+        ThiefGuildMetadataVersion = ThiefGuildMetadata.CurrentVersion
+    };
+
+    [Fact]
+    public async Task SaveCommand_RoundTripsThiefGuildColumns()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(MissionWithThiefGuildData());
+        var vm = MakeViewModel(repo);
+        vm.LoadFrom(repo.Missions.Single());
+        vm.Notes = "edited";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = repo.Missions.Single();
+        Assert.Equal(9.02, saved.ThiefGuildRating);
+        Assert.Equal(229, saved.ThiefGuildRatingCount);
+        Assert.Equal(1, saved.CampaignMissionCount);
+        Assert.Equal("A rainy night.", saved.Description);
+        Assert.Equal("Between These Dark Walls", saved.SequelOfTitle);
+        Assert.Equal("https://www.thiefguild.com/works/a", saved.SequelOfUrl);
+        Assert.Equal("The Chalice of Souls", saved.HasSequelTitle);
+        Assert.Equal("https://www.thiefguild.com/works/b", saved.HasSequelUrl);
+        Assert.Equal(ThiefGuildMetadata.CurrentVersion, saved.ThiefGuildMetadataVersion);
+    }
+
+    [Fact]
+    public void LoadFrom_FillsThiefGuildSection()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        vm.LoadFrom(MissionWithThiefGuildData());
+
+        Assert.Equal("★ 9.02 from 229 ratings · Single mission", vm.ThiefGuildSummary);
+        Assert.Equal("A rainy night.", vm.Description);
+        Assert.Equal(new ThiefGuildLink("Between These Dark Walls", "https://www.thiefguild.com/works/a"), vm.SequelOf);
+        Assert.True(vm.ShowSequelLinks);
+        Assert.True(vm.HasThiefGuildInfo);
+    }
+
+    [Fact]
+    public void ShowSequelLinks_IsFalseForSeriesMembers()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+        vm.LoadFrom(MissionWithThiefGuildData());
+
+        vm.SeriesName = "Some Series";
+
+        Assert.False(vm.ShowSequelLinks);
+    }
+
+    [Fact]
+    public void LoadFrom_WithoutThiefGuildData_HidesTheSection()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        vm.LoadFrom(new FanMission { Title = "Plain", FolderPath = "p" });
+
+        Assert.Null(vm.ThiefGuildSummary);
+        Assert.False(vm.HasThiefGuildInfo);
+    }
+
+    [Fact]
+    public async Task FetchThiefGuildMetadata_FillsSectionAndSaveStampsVersion()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "The Black Parade", FolderPath = "bp" });
+        var lookup = new StubThiefGuildLookupService(new ThiefGuildLookupResult(
+            null, null, "", "https://www.thiefguild.com/fanmissions/1/the-black-parade",
+            Rating: 9.7, RatingCount: 331, CampaignMissionCount: 10, Description: "A campaign."));
+        var vm = MakeViewModel(repo, lookup);
+        vm.LoadFrom(repo.Missions.Single());
+
+        await vm.FetchThiefGuildMetadataCommand.ExecuteAsync(null);
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal("★ 9.70 from 331 ratings · Campaign of 10 missions", vm.ThiefGuildSummary);
+        var saved = repo.Missions.Single();
+        Assert.Equal(10, saved.CampaignMissionCount);
+        Assert.Equal("A campaign.", saved.Description);
+        Assert.Equal(ThiefGuildMetadata.CurrentVersion, saved.ThiefGuildMetadataVersion);
+    }
+
+    [Fact]
+    public async Task FetchThiefGuildMetadata_ThenSave_StoresSeriesParts()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var lookup = new StubThiefGuildLookupService(new ThiefGuildLookupResult(
+            null, null, "", "https://www.thiefguild.com/fanmissions/66450/x",
+            new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3, new[]
+            {
+                new ThiefGuildSeriesPartInfo(1, "Dead Letter Box", "https://www.thiefguild.com/fanmissions/2684/p1"),
+                new ThiefGuildSeriesPartInfo(3, "In the Lion's Den", null)
+            })));
+        var vm = MakeViewModel(repo, lookup, seriesRepo);
+        await vm.LoadSeriesOptionsAsync();
+        vm.Title = "In the Lion's Den";
+
+        await vm.FetchThiefGuildMetadataCommand.ExecuteAsync(null);
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(new[] { "Dead Letter Box", "In the Lion's Den" }, seriesRepo.PartsList.OrderBy(p => p.Position).Select(p => p.Title));
+    }
 }
