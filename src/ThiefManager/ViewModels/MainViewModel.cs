@@ -15,22 +15,26 @@ public partial class MainViewModel : ObservableObject
     private readonly IArchiveInstaller _archiveInstaller;
     private readonly IFolderDeleter _folderDeleter;
     private readonly ISeriesRepository _seriesRepository;
+    private readonly ISettingsRepository _settingsRepository;
     private List<FanMission> _allMissions = new();
     private List<Series> _allSeries = new();
     private List<SeriesPart> _allParts = new();
+    private HashSet<GameTitle> _collapsedGames = new();
 
     public MainViewModel(
         IMissionRepository missionRepository,
         LaunchService launchService,
         IArchiveInstaller archiveInstaller,
         IFolderDeleter folderDeleter,
-        ISeriesRepository seriesRepository)
+        ISeriesRepository seriesRepository,
+        ISettingsRepository settingsRepository)
     {
         _missionRepository = missionRepository;
         _launchService = launchService;
         _archiveInstaller = archiveInstaller;
         _folderDeleter = folderDeleter;
         _seriesRepository = seriesRepository;
+        _settingsRepository = settingsRepository;
         LoadCommand = new AsyncRelayCommand(LoadAsync);
         LaunchSelectedCommand = new RelayCommand(LaunchSelected, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
         DeleteSelectedCommand = new AsyncRelayCommand(DeleteSelectedAsync, () => SelectedMission is not null);
@@ -39,6 +43,7 @@ public partial class MainViewModel : ObservableObject
         UninstallSelectedCommand = new AsyncRelayCommand(UninstallSelectedAsync, () => SelectedMission is not null && SelectedMission.InstallStatus == InstallStatus.Installed);
         ToggleSeriesExpandedCommand = new AsyncRelayCommand<SeriesHeaderRow?>(ToggleSeriesExpandedAsync);
         UngroupSelectedSeriesCommand = new AsyncRelayCommand(UngroupSelectedSeriesAsync, () => SelectedRow is SeriesHeaderRow);
+        ToggleGameExpandedCommand = new AsyncRelayCommand<GameHeaderRow?>(ToggleGameExpandedAsync);
     }
 
     public ObservableCollection<MissionListRow> VisibleRows { get; } = new();
@@ -51,7 +56,9 @@ public partial class MainViewModel : ObservableObject
     public bool IsMissingPartSelected => SelectedRow is MissingPartRow;
 
     /// <summary>Mission-specific context menu items apply to mission rows (or no selection) only.</summary>
-    public bool ShowMissionMenuItems => SelectedRow is not SeriesHeaderRow and not MissingPartRow;
+    public bool ShowMissionMenuItems => SelectedRow is not SeriesHeaderRow and not MissingPartRow and not GameHeaderRow;
+
+    public bool IsGameHeaderSelected => SelectedRow is GameHeaderRow;
 
     public string? SelectedThiefGuildUrl => SelectedRow switch
     {
@@ -84,6 +91,7 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand UninstallSelectedCommand { get; }
     public IAsyncRelayCommand<SeriesHeaderRow?> ToggleSeriesExpandedCommand { get; }
     public IAsyncRelayCommand UngroupSelectedSeriesCommand { get; }
+    public IAsyncRelayCommand<GameHeaderRow?> ToggleGameExpandedCommand { get; }
 
     public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
@@ -214,6 +222,7 @@ public partial class MainViewModel : ObservableObject
         SelectedMission = (value as MissionRow)?.Mission;
         OnPropertyChanged(nameof(IsSeriesHeaderSelected));
         OnPropertyChanged(nameof(IsMissingPartSelected));
+        OnPropertyChanged(nameof(IsGameHeaderSelected));
         OnPropertyChanged(nameof(ShowMissionMenuItems));
         OnPropertyChanged(nameof(SelectedThiefGuildUrl));
         OnPropertyChanged(nameof(CanOpenSelectedOnThiefGuild));
@@ -253,6 +262,12 @@ public partial class MainViewModel : ObservableObject
         _allMissions = await _missionRepository.GetAllAsync();
         _allSeries = await _seriesRepository.GetAllAsync();
         _allParts = await _seriesRepository.GetAllPartsAsync();
+        var settings = await _settingsRepository.GetAsync();
+        _collapsedGames = new HashSet<GameTitle>();
+        if (settings.Thief1Collapsed)
+            _collapsedGames.Add(GameTitle.Thief1);
+        if (settings.Thief2Collapsed)
+            _collapsedGames.Add(GameTitle.Thief2);
         ApplyQuery();
     }
 
@@ -262,13 +277,15 @@ public partial class MainViewModel : ObservableObject
         var selectedMissionId = SelectedMission?.Id;
         var selectedMissionSeriesId = SelectedMission?.SeriesId;
         var selectedSeriesId = (SelectedRow as SeriesHeaderRow)?.Series.Id;
+        var selectedGame = (SelectedRow as GameHeaderRow)?.Game;
+        var selectedMissionGame = SelectedMission?.Game;
 
         var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter).ToList();
         // Placeholders aren't missions, so only show them when no mission-level filter is active;
         // the Game filter is fine since it can't make a missing part less missing.
         var includeMissingParts = StatusFilter is null && InstallStatusFilter is null
             && string.IsNullOrWhiteSpace(TagFilter) && string.IsNullOrWhiteSpace(AuthorFilter);
-        var rows = MissionListBuilder.Build(filtered, _allMissions, _allSeries, SortField, SortAscending, _allParts, includeMissingParts);
+        var rows = MissionListBuilder.Build(filtered, _allMissions, _allSeries, SortField, SortAscending, _allParts, includeMissingParts, collapsedGames: _collapsedGames);
 
         VisibleRows.Clear();
         foreach (var row in rows)
@@ -276,7 +293,9 @@ public partial class MainViewModel : ObservableObject
 
         SelectedRow = rows.FirstOrDefault(r => selectedMissionId is not null && r is MissionRow m && m.Mission.Id == selectedMissionId)
             ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId)
-            ?? rows.FirstOrDefault(r => selectedMissionSeriesId is not null && r is SeriesHeaderRow h2 && h2.Series.Id == selectedMissionSeriesId);
+            ?? rows.FirstOrDefault(r => selectedMissionSeriesId is not null && r is SeriesHeaderRow h2 && h2.Series.Id == selectedMissionSeriesId)
+            ?? rows.FirstOrDefault(r => selectedGame is not null && r is GameHeaderRow g && g.Game == selectedGame)
+            ?? rows.FirstOrDefault(r => selectedMissionGame is not null && r is GameHeaderRow g2 && g2.Game == selectedMissionGame);
     }
 
     private void LaunchSelected()
@@ -440,6 +459,21 @@ public partial class MainViewModel : ObservableObject
         var isExpanded = !header.Series.IsExpanded;
         await _seriesRepository.SetExpandedAsync(header.Series.Id, isExpanded);
         header.Series.IsExpanded = isExpanded;
+        ApplyQuery();
+    }
+
+    private async Task ToggleGameExpandedAsync(GameHeaderRow? header)
+    {
+        header ??= SelectedRow as GameHeaderRow;
+        if (header is null)
+            return;
+
+        var collapse = header.IsExpanded;
+        if (collapse)
+            _collapsedGames.Add(header.Game);
+        else
+            _collapsedGames.Remove(header.Game);
+        await _settingsRepository.SetGameCollapsedAsync(header.Game, collapse);
         ApplyQuery();
     }
 
