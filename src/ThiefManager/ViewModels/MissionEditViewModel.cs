@@ -27,6 +27,8 @@ public partial class MissionEditViewModel : ObservableObject
     private int? _campaignMissionCount;
     private int _thiefGuildMetadataVersion;
     private ThiefGuildSeriesInfo? _lastFetchedSeries;
+    private string? _originalThiefGuildUrl;
+    private bool _fetchedThiefGuildDataThisSession;
 
     public MissionEditViewModel(IMissionRepository missionRepository, IThiefGuildLookupService thiefGuildLookupService, ISeriesRepository seriesRepository)
     {
@@ -144,6 +146,7 @@ public partial class MissionEditViewModel : ObservableObject
         DateCompleted = mission.DateCompleted;
         FolderPath = mission.FolderPath;
         ThiefGuildUrl = mission.ThiefGuildUrl;
+        _originalThiefGuildUrl = mission.ThiefGuildUrl;
         _thiefGuildLookupDismissed = mission.ThiefGuildLookupDismissed;
         _installStatus = mission.InstallStatus;
         _archivePath = mission.ArchivePath;
@@ -182,6 +185,7 @@ public partial class MissionEditViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(result.Tags))
             Tags = result.Tags;
         ThiefGuildUrl = result.Url;
+        _fetchedThiefGuildDataThisSession = true;
         _thiefGuildLookupDismissed = false;
         _seriesLookupChecked = true;
         _thiefGuildRating = result.Rating;
@@ -213,6 +217,23 @@ public partial class MissionEditViewModel : ObservableObject
             : _seriesId;
         var seriesPosition = seriesId is null ? null : SeriesPosition;
         var seriesEdited = seriesNameChanged || seriesPosition != _originalSeriesPosition;
+
+        // Changing the URL without re-fetching means the stored Thief Guild data no longer
+        // matches what's linked; clear it and reset the version so the next startup re-fetches.
+        var trimmedUrl = string.IsNullOrWhiteSpace(ThiefGuildUrl) ? null : ThiefGuildUrl.Trim();
+        var trimmedOriginalUrl = string.IsNullOrWhiteSpace(_originalThiefGuildUrl) ? null : _originalThiefGuildUrl.Trim();
+        var urlChangedWithoutFetch = !_fetchedThiefGuildDataThisSession
+            && !string.Equals(trimmedUrl, trimmedOriginalUrl, StringComparison.Ordinal);
+        if (urlChangedWithoutFetch)
+        {
+            _thiefGuildRating = null;
+            _thiefGuildRatingCount = null;
+            _campaignMissionCount = null;
+            Description = null;
+            SequelOf = null;
+            HasSequel = null;
+            _thiefGuildMetadataVersion = 0;
+        }
 
         var mission = new FanMission
         {

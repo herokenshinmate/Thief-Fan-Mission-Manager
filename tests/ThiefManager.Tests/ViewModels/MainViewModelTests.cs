@@ -628,4 +628,61 @@ public class MainViewModelTests
         Assert.Equal(ThiefGuildMetadata.CurrentVersion, mission.ThiefGuildMetadataVersion);
         Assert.Equal(2, vm.VisibleRows.OfType<MissingPartRow>().Count());
     }
+
+    [Fact]
+    public async Task ApplyFetchedThiefGuildMetadata_PatchesLoadedMissionWithoutRebuilding()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var loaded = vm.VisibleMissions.Single();
+        var rowBefore = vm.VisibleRows.OfType<MissionRow>().Single();
+        var fetched = new FanMission
+        {
+            Id = loaded.Id,
+            ThiefGuildRating = 8.5,
+            Description = "A rainy night.",
+            ThiefGuildMetadataVersion = 2
+        };
+
+        var result = vm.ApplyFetchedThiefGuildMetadata(fetched);
+
+        Assert.False(result);
+        Assert.Equal(8.5, vm.VisibleMissions.Single().ThiefGuildRating);
+        Assert.Equal(2, vm.VisibleMissions.Single().ThiefGuildMetadataVersion);
+        Assert.Same(rowBefore, vm.VisibleRows.OfType<MissionRow>().Single());
+    }
+
+    [Fact]
+    public async Task ApplyFetchedThiefGuildMetadata_NewSeries_RequestsRebuild()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var loaded = vm.VisibleMissions.Single();
+        var fetched = new FanMission { Id = loaded.Id, SeriesId = 5, SeriesPosition = 2, SeriesLookupChecked = true };
+
+        var result = vm.ApplyFetchedThiefGuildMetadata(fetched);
+
+        Assert.True(result);
+        Assert.Equal(5, vm.VisibleMissions.Single().SeriesId);
+    }
+
+    [Fact]
+    public async Task ApplyFetchedThiefGuildMetadata_DoesNotRegroupUngroupedMission()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", SeriesLookupChecked = true });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        var loaded = vm.VisibleMissions.Single();
+        var fetched = new FanMission { Id = loaded.Id, SeriesId = 5 };
+
+        var result = vm.ApplyFetchedThiefGuildMetadata(fetched);
+
+        Assert.False(result);
+        Assert.Null(vm.VisibleMissions.Single().SeriesId);
+    }
 }

@@ -491,4 +491,28 @@ public class MissionEditViewModelTests
 
         Assert.Equal(new[] { "Dead Letter Box", "In the Lion's Den" }, seriesRepo.PartsList.OrderBy(p => p.Position).Select(p => p.Title));
     }
+
+    [Fact]
+    public async Task SaveCommand_AfterChangingUrlWithoutFetch_ClearsThiefGuildDataAndResetsVersion()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(MissionWithThiefGuildData());
+        var vm = MakeViewModel(repo);
+        vm.LoadFrom(repo.Missions.Single());
+
+        vm.ThiefGuildUrl = "https://www.thiefguild.com/fanmissions/9999/different-mission";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = repo.Missions.Single();
+        Assert.Equal("https://www.thiefguild.com/fanmissions/9999/different-mission", saved.ThiefGuildUrl);
+        Assert.Null(saved.ThiefGuildRating);
+        Assert.Null(saved.ThiefGuildRatingCount);
+        Assert.Null(saved.CampaignMissionCount);
+        Assert.Null(saved.Description);
+        Assert.Null(saved.SequelOfTitle);
+        Assert.Null(saved.SequelOfUrl);
+        Assert.Null(saved.HasSequelTitle);
+        Assert.Null(saved.HasSequelUrl);
+        Assert.Equal(0, saved.ThiefGuildMetadataVersion);
+    }
 }

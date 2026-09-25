@@ -30,8 +30,8 @@ public class ThiefGuildBackfillService
         _delay = delay ?? Task.Delay;
     }
 
-    /// <summary>Raised after each mission whose fetched data was saved.</summary>
-    public event EventHandler? MissionUpdated;
+    /// <summary>Raised after each mission whose fetched data was saved, with the mission just fetched.</summary>
+    public event EventHandler<FanMission>? MissionUpdated;
 
     public async Task RunAsync(IProgress<(int Done, int Total)>? progress, CancellationToken cancellationToken, bool refreshAll = false)
     {
@@ -59,7 +59,7 @@ public class ThiefGuildBackfillService
                     await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
                     // Fetch-owned columns only: `mission` was loaded before the loop and may be stale.
                     await _missionRepository.ApplyThiefGuildMetadataAsync(mission);
-                    MissionUpdated?.Invoke(this, EventArgs.Empty);
+                    MissionUpdated?.Invoke(this, mission);
                 }
             }
             catch (Exception) when (!cancellationToken.IsCancellationRequested)

@@ -105,7 +105,7 @@ public class ThiefGuildLookupService : IThiefGuildLookupService
         try
         {
             var (document, finalUrl) = await LoadDocumentAsync(url);
-            if (document is null)
+            if (document is null || !ThiefGuildPageParser.LooksLikeMissionDetailPage(document))
                 return null;
 
             return ThiefGuildPageParser.BuildResult(document, document.Body?.TextContent ?? string.Empty, finalUrl);
