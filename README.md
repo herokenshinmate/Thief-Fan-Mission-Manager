@@ -1,5 +1,11 @@
 # Thief FM Manager
 
+[![Latest release](https://img.shields.io/github/v/release/herokenshinmate/Thief-Fan-Mission-Manager)](https://github.com/herokenshinmate/Thief-Fan-Mission-Manager/releases/latest)
+[![Release workflow](https://img.shields.io/github/actions/workflow/status/herokenshinmate/Thief-Fan-Mission-Manager/release.yml?label=release)](https://github.com/herokenshinmate/Thief-Fan-Mission-Manager/actions/workflows/release.yml)
+[![Downloads](https://img.shields.io/github/downloads/herokenshinmate/Thief-Fan-Mission-Manager/total)](https://github.com/herokenshinmate/Thief-Fan-Mission-Manager/releases)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6)](#installing)
+
 A Windows desktop app for cataloging and tracking fan missions (FMs) for
 **Thief: The Dark Project** and **Thief II: The Metal Age**. It keeps track
 of what you've installed, what you've played, your ratings and notes, and
@@ -28,6 +34,9 @@ so you don't have to track any of it by hand.
 - **Self-updating**: new versions download in the background and a
   "Restart to update" link appears when one's ready. See Help > Changelog
   for what changed, or Check for Updates in About.
+
+See [`docs/USAGE.md`](docs/USAGE.md) for a walkthrough of first-run setup,
+cataloging, and everyday use.
 
 ## Installing
 
@@ -88,5 +97,6 @@ useful to other Thief fans — I'm the sole developer and maintainer.
 
 ## License
 
-No license has been chosen yet; all rights reserved for now. If you'd
-like to use or adapt this code, open an issue.
+[GPL-3.0](LICENSE) — you're free to use, modify, and redistribute this
+code, including commercially, as long as derivative works are also
+distributed under GPL-3.0 with source available.
