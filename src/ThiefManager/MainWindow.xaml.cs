@@ -23,6 +23,7 @@ public partial class MainWindow : FluentWindow
     private readonly Services.IArchiveFileReader _archiveFileReader;
     private readonly Services.IThiefGuildLookupService _thiefGuildLookupService;
     private readonly IIgnoredFmRepository _ignoredFmRepository;
+    private readonly ISeriesRepository _seriesRepository;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
 
@@ -34,7 +35,8 @@ public partial class MainWindow : FluentWindow
         Services.IDirectoryReader directoryReader,
         Services.IArchiveFileReader archiveFileReader,
         Services.IThiefGuildLookupService thiefGuildLookupService,
-        IIgnoredFmRepository ignoredFmRepository)
+        IIgnoredFmRepository ignoredFmRepository,
+        ISeriesRepository seriesRepository)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -45,6 +47,7 @@ public partial class MainWindow : FluentWindow
         _archiveFileReader = archiveFileReader;
         _thiefGuildLookupService = thiefGuildLookupService;
         _ignoredFmRepository = ignoredFmRepository;
+        _seriesRepository = seriesRepository;
         DataContext = _viewModel;
 
         _sortableColumns = new Dictionary<System.Windows.Controls.GridViewColumn, SortField>
@@ -138,7 +141,7 @@ public partial class MainWindow : FluentWindow
 
     private void AddMission_Click(object sender, RoutedEventArgs e)
     {
-        var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService);
+        var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService, _seriesRepository);
         var editWindow = new MissionEditWindow(editViewModel) { Owner = this };
         editViewModel.Saved += async (_, _) =>
         {
@@ -162,7 +165,7 @@ public partial class MainWindow : FluentWindow
 
     private void OpenPropertiesFor(FanMission mission)
     {
-        var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService);
+        var editViewModel = new MissionEditViewModel(_missionRepository, _thiefGuildLookupService, _seriesRepository);
         editViewModel.LoadFrom(mission);
         var editWindow = new MissionEditWindow(editViewModel) { Owner = this };
         editViewModel.Saved += async (_, _) =>
