@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ThiefManager.Data;
@@ -21,6 +22,11 @@ public partial class MissionEditViewModel : ObservableObject
     private int? _originalSeriesPosition;
     private bool _seriesLookupChecked;
     private ThiefGuildSeriesInfo? _fetchedSeries;
+    private double? _thiefGuildRating;
+    private int? _thiefGuildRatingCount;
+    private int? _campaignMissionCount;
+    private int _thiefGuildMetadataVersion;
+    private ThiefGuildSeriesInfo? _lastFetchedSeries;
 
     public MissionEditViewModel(IMissionRepository missionRepository, IThiefGuildLookupService thiefGuildLookupService, ISeriesRepository seriesRepository)
     {
@@ -67,7 +73,47 @@ public partial class MissionEditViewModel : ObservableObject
 
     public bool HasSeriesName => !string.IsNullOrWhiteSpace(SeriesName);
 
-    partial void OnSeriesNameChanged(string? value) => OnPropertyChanged(nameof(HasSeriesName));
+    partial void OnSeriesNameChanged(string? value)
+    {
+        OnPropertyChanged(nameof(HasSeriesName));
+        NotifySequelVisibilityChanged();
+    }
+
+    [ObservableProperty] private string? description;
+    [ObservableProperty] private ThiefGuildLink? sequelOf;
+    [ObservableProperty] private ThiefGuildLink? hasSequel;
+    [ObservableProperty] private string? thiefGuildSummary;
+
+    /// <summary>Sequel links only matter outside a series; the series view already orders members.</summary>
+    public bool ShowSequelLinks => !HasSeriesName && (SequelOf is not null || HasSequel is not null);
+
+    public bool HasThiefGuildInfo => ThiefGuildSummary is not null || Description is not null || ShowSequelLinks;
+
+    partial void OnDescriptionChanged(string? value) => OnPropertyChanged(nameof(HasThiefGuildInfo));
+    partial void OnThiefGuildSummaryChanged(string? value) => OnPropertyChanged(nameof(HasThiefGuildInfo));
+    partial void OnSequelOfChanged(ThiefGuildLink? value) => NotifySequelVisibilityChanged();
+    partial void OnHasSequelChanged(ThiefGuildLink? value) => NotifySequelVisibilityChanged();
+
+    private void NotifySequelVisibilityChanged()
+    {
+        OnPropertyChanged(nameof(ShowSequelLinks));
+        OnPropertyChanged(nameof(HasThiefGuildInfo));
+    }
+
+    private void RefreshThiefGuildSummary()
+    {
+        var parts = new List<string>();
+        if (_thiefGuildRating is double rating && _thiefGuildRatingCount is int count)
+            parts.Add($"★ {rating.ToString("0.00", CultureInfo.InvariantCulture)} from {count} ratings");
+        if (_campaignMissionCount == 1)
+            parts.Add("Single mission");
+        else if (_campaignMissionCount is int missions && missions > 1)
+            parts.Add($"Campaign of {missions} missions");
+        ThiefGuildSummary = parts.Count == 0 ? null : string.Join(" · ", parts);
+    }
+
+    private static ThiefGuildLink? LinkOrNull(string? title, string? url) =>
+        string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(url) ? null : new ThiefGuildLink(title, url);
 
     /// <summary>
     /// Fills the Series dropdown and shows the mission's current series name. Call after LoadFrom.
@@ -105,6 +151,14 @@ public partial class MissionEditViewModel : ObservableObject
         SeriesPosition = mission.SeriesPosition;
         _originalSeriesPosition = mission.SeriesPosition;
         _seriesLookupChecked = mission.SeriesLookupChecked;
+        _thiefGuildRating = mission.ThiefGuildRating;
+        _thiefGuildRatingCount = mission.ThiefGuildRatingCount;
+        _campaignMissionCount = mission.CampaignMissionCount;
+        _thiefGuildMetadataVersion = mission.ThiefGuildMetadataVersion;
+        Description = mission.Description;
+        SequelOf = LinkOrNull(mission.SequelOfTitle, mission.SequelOfUrl);
+        HasSequel = LinkOrNull(mission.HasSequelTitle, mission.HasSequelUrl);
+        RefreshThiefGuildSummary();
     }
 
     private async Task FetchThiefGuildMetadataAsync()
@@ -130,6 +184,15 @@ public partial class MissionEditViewModel : ObservableObject
         ThiefGuildUrl = result.Url;
         _thiefGuildLookupDismissed = false;
         _seriesLookupChecked = true;
+        _thiefGuildRating = result.Rating;
+        _thiefGuildRatingCount = result.RatingCount;
+        _campaignMissionCount = result.CampaignMissionCount;
+        _thiefGuildMetadataVersion = ThiefGuildMetadata.CurrentVersion;
+        _lastFetchedSeries = result.Series;
+        Description = result.Description;
+        SequelOf = result.SequelOf;
+        HasSequel = result.HasSequel;
+        RefreshThiefGuildSummary();
         if (result.Series is not null && string.IsNullOrWhiteSpace(SeriesName))
         {
             _fetchedSeries = result.Series;
@@ -170,7 +233,16 @@ public partial class MissionEditViewModel : ObservableObject
             ThiefGuildLookupDismissed = _thiefGuildLookupDismissed,
             SeriesId = seriesId,
             SeriesPosition = seriesPosition,
-            SeriesLookupChecked = _seriesLookupChecked || seriesEdited
+            SeriesLookupChecked = _seriesLookupChecked || seriesEdited,
+            ThiefGuildRating = _thiefGuildRating,
+            ThiefGuildRatingCount = _thiefGuildRatingCount,
+            CampaignMissionCount = _campaignMissionCount,
+            Description = Description,
+            SequelOfTitle = SequelOf?.Title,
+            SequelOfUrl = SequelOf?.Url,
+            HasSequelTitle = HasSequel?.Title,
+            HasSequelUrl = HasSequel?.Url,
+            ThiefGuildMetadataVersion = _thiefGuildMetadataVersion
         };
 
         MissionStatusDates.Apply(mission, Status, DateTime.Now);
@@ -181,6 +253,9 @@ public partial class MissionEditViewModel : ObservableObject
             await _missionRepository.AddAsync(mission);
         else
             await _missionRepository.UpdateAsync(mission);
+
+        if (_lastFetchedSeries is not null && seriesId is int savedSeriesId)
+            await SeriesAssigner.ReplacePartsIfSameSeriesAsync(savedSeriesId, _lastFetchedSeries, _seriesRepository);
 
         await _seriesRepository.DeleteOrphansAsync();
 
