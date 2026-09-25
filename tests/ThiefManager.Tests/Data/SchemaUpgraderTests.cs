@@ -94,6 +94,29 @@ public class SchemaUpgraderTests : IDisposable
         Assert.Equal("P1", Assert.Single(await seriesRepo.GetAllPartsAsync()).Title);
     }
 
+    [Fact]
+    public async Task EnsureColumns_OnPreGameGroupsDatabase_AddsCollapsedColumns()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                ALTER TABLE "Settings" DROP COLUMN "Thief1Collapsed";
+                ALTER TABLE "Settings" DROP COLUMN "Thief2Collapsed";
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var repo = new SettingsRepository(CreateContext);
+        await repo.SetGameCollapsedAsync(GameTitle.Thief1, true);
+        Assert.True((await repo.GetAsync()).Thief1Collapsed);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

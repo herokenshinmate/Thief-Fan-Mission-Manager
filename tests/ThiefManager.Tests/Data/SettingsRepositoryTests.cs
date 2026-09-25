@@ -58,6 +58,32 @@ public class SettingsRepositoryTests : IDisposable
         Assert.Equal(@"C:\Downloads\Thief2", reloaded.Thief2DownloadsFolder);
     }
 
+    [Fact]
+    public async Task SetGameCollapsedAsync_PersistsPerGame()
+    {
+        var repo = new SettingsRepository(CreateContext);
+
+        await repo.SetGameCollapsedAsync(GameTitle.Thief2, true);
+
+        var settings = await repo.GetAsync();
+        Assert.False(settings.Thief1Collapsed);
+        Assert.True(settings.Thief2Collapsed);
+    }
+
+    [Fact]
+    public async Task SaveAsync_KeepsCollapsedGames()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        await repo.SaveAsync(new AppSettings { Thief1FmFolder = @"C:\fms\t1" });
+        await repo.SetGameCollapsedAsync(GameTitle.Thief1, true);
+
+        await repo.SaveAsync(new AppSettings { Thief1FmFolder = @"D:\fms\t1" });
+
+        var settings = await repo.GetAsync();
+        Assert.Equal(@"D:\fms\t1", settings.Thief1FmFolder);
+        Assert.True(settings.Thief1Collapsed);
+    }
+
     public void Dispose()
     {
         try
