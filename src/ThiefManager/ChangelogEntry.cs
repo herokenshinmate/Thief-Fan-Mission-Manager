@@ -7,6 +7,11 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.4", "2026-09-25", new[]
+        {
+            "The mission list is now divided into a large banner per game (Thief 1, then Thief 2) showing how many missions you have, have completed and have installed; click a banner's arrow or double-click it to collapse that game, and the app remembers which games you collapsed.",
+            "Campaigns stand out: missions that bundle several missions in one FM get a gold bar and a \"CAMPAIGN · N\" badge, and series get a blue bar with a \"SERIES\" badge on their header."
+        }),
         new("3.9.3", "2026-09-25", new[]
         {
             "Added TG Rating and Type columns to the mission list, showing each mission's Thief Guild community rating (e.g. ★ 9.02 (229)) and whether it's a campaign; both are sortable.",
