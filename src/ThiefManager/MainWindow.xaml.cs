@@ -415,7 +415,7 @@ public partial class MainWindow : FluentWindow
             {
                 Owner = this,
                 Title = "Restart to Update",
-                Content = "A Thief Guild refresh is running. Restart to update anyway? It will resume next time.",
+                Content = "A Thief Guild refresh is running. Restart to update anyway? Missions that weren't updated yet are fetched automatically next time; run Refresh Thief Guild Data again to finish a full refresh.",
                 PrimaryButtonText = "Restart",
                 CloseButtonText = "Cancel"
             };
