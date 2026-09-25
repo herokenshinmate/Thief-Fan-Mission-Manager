@@ -39,7 +39,7 @@ public partial class App : Application
         var archiveInstaller = new ArchiveInstaller();
         var folderDeleter = new FolderDeleter();
         var thiefGuildLookupService = new ThiefGuildLookupService();
-        var seriesBackfillService = new SeriesBackfillService(missionRepository, seriesRepository, thiefGuildLookupService);
+        var thiefGuildBackfillService = new ThiefGuildBackfillService(missionRepository, seriesRepository, thiefGuildLookupService);
 
         var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository);
         var settings = await settingsRepository.GetAsync();
@@ -63,7 +63,7 @@ public partial class App : Application
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
         GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
-        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService, ignoredFmRepository, seriesRepository, seriesBackfillService);
+        var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService, ignoredFmRepository, seriesRepository, thiefGuildBackfillService);
         MainWindow = mainWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();

@@ -24,7 +24,7 @@ public partial class MainWindow : FluentWindow
     private readonly Services.IThiefGuildLookupService _thiefGuildLookupService;
     private readonly IIgnoredFmRepository _ignoredFmRepository;
     private readonly ISeriesRepository _seriesRepository;
-    private readonly SeriesBackfillService _seriesBackfillService;
+    private readonly ThiefGuildBackfillService _seriesBackfillService;
     private readonly CancellationTokenSource _backfillCancellation = new();
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
@@ -39,7 +39,7 @@ public partial class MainWindow : FluentWindow
         Services.IThiefGuildLookupService thiefGuildLookupService,
         IIgnoredFmRepository ignoredFmRepository,
         ISeriesRepository seriesRepository,
-        SeriesBackfillService seriesBackfillService)
+        ThiefGuildBackfillService seriesBackfillService)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -84,7 +84,7 @@ public partial class MainWindow : FluentWindow
                 ? $"Checking Thief Guild for series info… {p.Done}/{p.Total}"
                 : null);
 
-        _seriesBackfillService.SeriesAssigned += SeriesBackfill_SeriesAssigned;
+        _seriesBackfillService.MissionUpdated += SeriesBackfill_SeriesAssigned;
         try
         {
             await _seriesBackfillService.RunAsync(progress, _backfillCancellation.Token);
@@ -99,7 +99,7 @@ public partial class MainWindow : FluentWindow
         }
         finally
         {
-            _seriesBackfillService.SeriesAssigned -= SeriesBackfill_SeriesAssigned;
+            _seriesBackfillService.MissionUpdated -= SeriesBackfill_SeriesAssigned;
             _viewModel.BackgroundStatus = null;
         }
     }
