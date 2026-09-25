@@ -3,3 +3,6 @@ obj/
 *.user
 *.db
 .vs/
+publish/
+releases/
+release-notes.md

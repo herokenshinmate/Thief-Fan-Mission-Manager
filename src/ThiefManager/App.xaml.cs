@@ -18,6 +18,7 @@ public partial class App : Application
         ApplicationThemeManager.Apply(ApplicationTheme.Dark);
         ApplicationAccentColorManager.Apply(Color.FromRgb(0xC9, 0xA2, 0x27));
 
+        // User data lives in %LocalAppData%\ThiefManager, deliberately separate from Velopack's install root (%LocalAppData%\ThiefFMManager, named after the package id). Never give the release package id "ThiefManager": uninstall deletes the install root.
         var appDataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "ThiefManager");
@@ -40,8 +41,9 @@ public partial class App : Application
         var folderDeleter = new FolderDeleter();
         var thiefGuildLookupService = new ThiefGuildLookupService();
         var thiefGuildBackfillService = new ThiefGuildBackfillService(missionRepository, seriesRepository, thiefGuildLookupService);
+        var updateService = new VelopackUpdateService();
 
-        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository, settingsRepository);
+        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository, settingsRepository, updateService);
         var settings = await settingsRepository.GetAsync();
 
         var isFirstRun = string.IsNullOrWhiteSpace(settings.Thief1FmFolder)

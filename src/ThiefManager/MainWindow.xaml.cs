@@ -80,6 +80,8 @@ public partial class MainWindow : FluentWindow
         Loaded += async (_, _) =>
         {
             await _viewModel.LoadCommand.ExecuteAsync(null);
+            // Runs alongside the backfill; it swallows its own failures.
+            _ = _viewModel.CheckForUpdatesOnStartupAsync();
             await RunThiefGuildBackfillAsync(refreshAll: false);
         };
         Loaded += (_, _) => ResizeTagsColumn();
@@ -394,8 +396,60 @@ public partial class MainWindow : FluentWindow
     private void OpenChangelog_Click(object sender, RoutedEventArgs e) =>
         new ChangelogWindow { Owner = this }.ShowDialog();
 
-    private void OpenAbout_Click(object sender, RoutedEventArgs e) =>
-        new AboutWindow { Owner = this }.ShowDialog();
+    private void OpenAbout_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.UpdateCheckMessage = null;
+        new AboutWindow(_viewModel, RestartToUpdateAsync) { Owner = this }.ShowDialog();
+    }
+
+    private async void RestartToUpdate_Click(object sender, RoutedEventArgs e) => await RestartToUpdateAsync();
+
+    private async Task RestartToUpdateAsync()
+    {
+        try
+        {
+            if (_viewModel.TryRestartToUpdate(confirmedDespiteRefresh: false))
+                return;
+
+            var confirm = new Wpf.Ui.Controls.MessageBox
+            {
+                Owner = this,
+                Title = "Restart to Update",
+                Content = "A Thief Guild refresh is running. Restart to update anyway? Missions that weren't updated yet are fetched automatically next time; run Refresh Thief Guild Data again to finish a full refresh.",
+                PrimaryButtonText = "Restart",
+                CloseButtonText = "Cancel"
+            };
+            if (await confirm.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+                _viewModel.TryRestartToUpdate(confirmedDespiteRefresh: true);
+        }
+        catch (Exception ex)
+        {
+            await new Wpf.Ui.Controls.MessageBox
+            {
+                Owner = this,
+                Title = "Update Failed",
+                Content = $"Couldn't apply the update: {ex.Message}",
+                CloseButtonText = "OK"
+            }.ShowDialogAsync();
+        }
+    }
+
+    private async void WhatsNew_Click(object sender, RoutedEventArgs e)
+    {
+        var notes = string.IsNullOrWhiteSpace(_viewModel.UpdateReleaseNotes) ? "No release notes." : _viewModel.UpdateReleaseNotes;
+        await new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = this,
+            Title = $"What's new in {_viewModel.UpdateReadyVersion}",
+            Content = new ScrollViewer
+            {
+                MaxHeight = 360,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = new System.Windows.Controls.TextBlock { Text = notes, TextWrapping = TextWrapping.Wrap, MaxWidth = 460 }
+            },
+            CloseButtonText = "Close"
+        }.ShowDialogAsync();
+    }
 
     private void OpenThiefGuild_Click(object sender, RoutedEventArgs e) =>
         Process.Start(new ProcessStartInfo("https://www.thiefguild.com") { UseShellExecute = true });

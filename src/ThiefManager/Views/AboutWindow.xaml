@@ -27,6 +27,16 @@
                        TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,12" MaxWidth="300"/>
             <TextBlock Text="Built with WPF-UI and CommunityToolkit.Mvvm." Foreground="{StaticResource MutedForegroundBrush}" FontSize="11"
                        TextAlignment="Center" HorizontalAlignment="Center"/>
+            <ui:Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" HorizontalAlignment="Center" Margin="0,16,0,6">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24"/>
+                </ui:Button.Icon>
+            </ui:Button>
+            <TextBlock Text="{Binding UpdateCheckMessage}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300"
+                       FontSize="11" Foreground="{StaticResource MutedForegroundBrush}" HorizontalAlignment="Center"
+                       Visibility="{Binding UpdateCheckMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+            <ui:Button Content="Restart to Update" Click="RestartToUpdate_Click" Appearance="Success" HorizontalAlignment="Center" Margin="0,8,0,0"
+                       Visibility="{Binding IsUpdateReady, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
     </Grid>
 </ui:FluentWindow>

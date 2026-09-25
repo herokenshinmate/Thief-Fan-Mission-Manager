@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)release, e.g. v3.9.7'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  REPO_URL: https://github.com/${{ github.repository }}
+  VPK_VERSION: 1.2.158
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Resolve tag and version
+        id: tag
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $tag = if ($env:EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_TAG } else { $env:REF_NAME }
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') { throw "Tag '$tag' isn't in the form vX.Y.Z." }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$($Matches[1])" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Verify version and extract release notes
+        shell: pwsh
+        run: ./build/Get-ReleaseNotes.ps1 -Version ${{ steps.tag.outputs.version }} -OutFile release-notes.md
+
+      - name: Test
+        run: dotnet test tests/ThiefManager.Tests -c Release
+
+      - name: Publish (self-contained win-x64)
+        run: dotnet publish src/ThiefManager -c Release -r win-x64 --self-contained -p:Version=${{ steps.tag.outputs.version }} -o publish
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version ${{ env.VPK_VERSION }}
+
+      # Fetches the previous release so vpk can build a small delta update. The very first release
+      # has nothing to download, so a failure here is tolerated.
+      - name: Download previous release
+        id: download
+        shell: pwsh
+        continue-on-error: true
+        run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir releases
+
+      - name: Warn if no previous release was downloaded
+        if: steps.download.outcome == 'failure'
+        shell: pwsh
+        run: Write-Host "::warning::No previous release downloaded - this release will have no delta package (expected for the very first release)."
+
+      - name: Pack installer and update packages
+        shell: pwsh
+        env:
+          SIGN_PARAMS: ${{ secrets.SIGN_PARAMS }}
+        run: |
+          $vpkArgs = @(
+            'pack',
+            '--packId', 'ThiefFMManager',
+            '--packVersion', '${{ steps.tag.outputs.version }}',
+            '--packDir', 'publish',
+            '--mainExe', 'ThiefManager.exe',
+            '--packTitle', 'Thief FM Manager',
+            '--icon', 'src/ThiefManager/Assets/AppIcon.ico',
+            '--releaseNotes', 'release-notes.md',
+            '--outputDir', 'releases'
+          )
+          if ($env:SIGN_PARAMS) {
+            $vpkArgs += @('--signParams', $env:SIGN_PARAMS)
+            Write-Host 'Signing enabled (SIGN_PARAMS secret is set).'
+          } else {
+            Write-Host 'Unsigned build: the SIGN_PARAMS secret is not set.'
+          }
+          vpk @vpkArgs
+          if ($LASTEXITCODE -ne 0) { throw "vpk pack failed with exit code $LASTEXITCODE" }
+
+      - name: Publish GitHub release
+        shell: pwsh
+        run: |
+          vpk upload github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} --publish --releaseName "Thief FM Manager ${{ steps.tag.outputs.version }}" --tag ${{ steps.tag.outputs.tag }} --outputDir releases
+          if ($LASTEXITCODE -ne 0) { throw "vpk upload failed with exit code $LASTEXITCODE" }
