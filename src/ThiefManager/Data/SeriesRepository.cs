@@ -70,6 +70,14 @@ public class SeriesRepository : ISeriesRepository
         await db.SaveChangesAsync();
     }
 
+    public async Task SetAllExpandedAsync(bool isExpanded)
+    {
+        using var db = _contextFactory();
+        foreach (var series in await db.Series.ToListAsync())
+            series.IsExpanded = isExpanded;
+        await db.SaveChangesAsync();
+    }
+
     public async Task SetExpandedAsync(int id, bool isExpanded)
     {
         using var db = _contextFactory();

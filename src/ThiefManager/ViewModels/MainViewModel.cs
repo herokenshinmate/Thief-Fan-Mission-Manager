@@ -44,6 +44,9 @@ public partial class MainViewModel : ObservableObject
         ToggleSeriesExpandedCommand = new AsyncRelayCommand<SeriesHeaderRow?>(ToggleSeriesExpandedAsync);
         UngroupSelectedSeriesCommand = new AsyncRelayCommand(UngroupSelectedSeriesAsync, () => SelectedRow is SeriesHeaderRow);
         ToggleGameExpandedCommand = new AsyncRelayCommand<GameHeaderRow?>(ToggleGameExpandedAsync);
+        SetSelectedRatingCommand = new AsyncRelayCommand<int?>(SetSelectedRatingAsync, _ => SelectedMission is not null);
+        CollapseAllSeriesCommand = new AsyncRelayCommand(CollapseAllSeriesAsync);
+        ExpandAllCommand = new AsyncRelayCommand(ExpandAllAsync);
     }
 
     public ObservableCollection<MissionListRow> VisibleRows { get; } = new();
@@ -92,6 +95,15 @@ public partial class MainViewModel : ObservableObject
     public IAsyncRelayCommand<SeriesHeaderRow?> ToggleSeriesExpandedCommand { get; }
     public IAsyncRelayCommand UngroupSelectedSeriesCommand { get; }
     public IAsyncRelayCommand<GameHeaderRow?> ToggleGameExpandedCommand { get; }
+
+    /// <summary>Sets the selected mission's 0–5 rating; a null parameter clears it.</summary>
+    public IAsyncRelayCommand<int?> SetSelectedRatingCommand { get; }
+
+    /// <summary>Collapses every series, leaving the game banners open.</summary>
+    public IAsyncRelayCommand CollapseAllSeriesCommand { get; }
+
+    /// <summary>Expands every series and every game.</summary>
+    public IAsyncRelayCommand ExpandAllCommand { get; }
 
     public string[] GameFilterOptions { get; private set; } = { "(All)", GameTitleNames.Thief1DisplayName, GameTitleNames.Thief2DisplayName };
 
@@ -254,6 +266,7 @@ public partial class MainViewModel : ObservableObject
         SetSelectedStatusCommand.NotifyCanExecuteChanged();
         InstallSelectedCommand.NotifyCanExecuteChanged();
         UninstallSelectedCommand.NotifyCanExecuteChanged();
+        SetSelectedRatingCommand.NotifyCanExecuteChanged();
     }
 
     private async Task LoadAsync()
@@ -326,6 +339,22 @@ public partial class MainViewModel : ObservableObject
         if (SelectedMission is null)
             return;
 
+        // An installed mission's folder goes too, so deleting it doesn't leave an orphaned FM on
+        // disk. If the folder can't be removed, keep the library entry so nothing is lost silently.
+        if (SelectedMission.InstallStatus == InstallStatus.Installed)
+        {
+            try
+            {
+                _folderDeleter.Delete(SelectedMission.FolderPath);
+            }
+            catch (Exception ex)
+            {
+                InstallError = $"Failed to delete: {ex.Message}";
+                return;
+            }
+        }
+        InstallError = null;
+
         var id = SelectedMission.Id;
         await _missionRepository.DeleteAsync(id);
         _allMissions.RemoveAll(m => m.Id == id);
@@ -333,6 +362,35 @@ public partial class MainViewModel : ObservableObject
         _allSeries = await _seriesRepository.GetAllAsync();
         _allParts = await _seriesRepository.GetAllPartsAsync();
         SelectedMission = null;
+        ApplyQuery();
+    }
+
+    private async Task SetSelectedRatingAsync(int? rating)
+    {
+        if (SelectedMission is null)
+            return;
+
+        SelectedMission.Rating = rating;
+        await _missionRepository.UpdateAsync(SelectedMission);
+        ApplyQuery();
+    }
+
+    private async Task CollapseAllSeriesAsync()
+    {
+        await _seriesRepository.SetAllExpandedAsync(false);
+        foreach (var series in _allSeries)
+            series.IsExpanded = false;
+        ApplyQuery();
+    }
+
+    private async Task ExpandAllAsync()
+    {
+        await _seriesRepository.SetAllExpandedAsync(true);
+        foreach (var series in _allSeries)
+            series.IsExpanded = true;
+        foreach (var game in _collapsedGames.ToList())
+            await _settingsRepository.SetGameCollapsedAsync(game, false);
+        _collapsedGames.Clear();
         ApplyQuery();
     }
 

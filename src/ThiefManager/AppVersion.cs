@@ -2,5 +2,5 @@ namespace ThiefManager;
 
 public static class AppVersion
 {
-    public const string Current = "3.9.5";
+    public const string Current = "3.9.6";
 }

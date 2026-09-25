@@ -803,4 +803,109 @@ public class MainViewModelTests
 
         Assert.Equal(GameTitle.Thief1, Assert.IsType<GameHeaderRow>(vm.SelectedRow).Game);
     }
+
+    [Fact]
+    public async Task DeleteSelected_InstalledMission_DeletesFolderThenRemovesFromLibrary()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "fms/m", InstallStatus = InstallStatus.Installed });
+        var deleter = new RecordingFolderDeleter();
+        var vm = MakeViewModel(repo, folderDeleter: deleter);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.DeleteSelectedCommand.ExecuteAsync(null);
+
+        Assert.Equal("fms/m", deleter.LastDeletedFolderPath);
+        Assert.Empty(repo.Missions);
+    }
+
+    [Fact]
+    public async Task DeleteSelected_NotInstalledMission_LeavesDiskAlone()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "fms/m", InstallStatus = InstallStatus.NotInstalled });
+        var deleter = new RecordingFolderDeleter();
+        var vm = MakeViewModel(repo, folderDeleter: deleter);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.DeleteSelectedCommand.ExecuteAsync(null);
+
+        Assert.Null(deleter.LastDeletedFolderPath);
+        Assert.Empty(repo.Missions);
+    }
+
+    [Fact]
+    public async Task DeleteSelected_WhenFolderDeleteFails_KeepsMissionAndReportsError()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "fms/m", InstallStatus = InstallStatus.Installed });
+        var vm = MakeViewModel(repo, folderDeleter: new RecordingFolderDeleter { ThrowOnDelete = true });
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.DeleteSelectedCommand.ExecuteAsync(null);
+
+        Assert.Single(repo.Missions);
+        Assert.Single(vm.VisibleMissions);
+        Assert.StartsWith("Failed to delete", vm.InstallError);
+    }
+
+    [Fact]
+    public async Task SetSelectedRating_SetsAndClearsRating()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "M", Game = GameTitle.Thief1, FolderPath = "m" });
+        var vm = MakeViewModel(repo);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+
+        await vm.SetSelectedRatingCommand.ExecuteAsync(4);
+        Assert.Equal(4, repo.Missions.Single().Rating);
+
+        await vm.SetSelectedRatingCommand.ExecuteAsync(null);
+        Assert.Null(repo.Missions.Single().Rating);
+    }
+
+    [Fact]
+    public void SetSelectedRating_IsDisabledWithoutASelectedMission()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        Assert.False(vm.SetSelectedRatingCommand.CanExecute(3));
+    }
+
+    [Fact]
+    public async Task CollapseAllSeries_CollapsesEverySeriesButKeepsGamesOpen()
+    {
+        var (_, seriesRepo, vm) = await MakeWithSeriesAsync();
+
+        await vm.CollapseAllSeriesCommand.ExecuteAsync(null);
+
+        Assert.All(seriesRepo.SeriesList, s => Assert.False(s.IsExpanded));
+        Assert.Equal(new[] { "Alone" }, vm.VisibleMissions.Select(m => m.Title));
+        Assert.All(vm.VisibleRows.OfType<GameHeaderRow>(), g => Assert.True(g.IsExpanded));
+    }
+
+    [Fact]
+    public async Task ExpandAll_OpensEverySeriesAndGame()
+    {
+        var repo = new FakeMissionRepository();
+        var seriesRepo = new FakeSeriesRepository(repo);
+        var settings = new FakeSettingsRepository();
+        var series = await seriesRepo.GetOrCreateByNameAsync("Book");
+        await seriesRepo.SetExpandedAsync(series.Id, false);
+        await settings.SetGameCollapsedAsync(GameTitle.Thief1, true);
+        await repo.AddAsync(new FanMission { Title = "Part 1", Game = GameTitle.Thief2, FolderPath = "p1", SeriesId = series.Id, SeriesPosition = 1 });
+        await repo.AddAsync(new FanMission { Title = "T1", Game = GameTitle.Thief1, FolderPath = "t1" });
+        var vm = MakeViewModel(repo, seriesRepo: seriesRepo, settingsRepo: settings);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.ExpandAllCommand.ExecuteAsync(null);
+
+        Assert.True(seriesRepo.SeriesList.Single().IsExpanded);
+        Assert.False((await settings.GetAsync()).Thief1Collapsed);
+        Assert.Equal(new[] { "T1", "Part 1" }, vm.VisibleMissions.Select(m => m.Title));
+    }
 }

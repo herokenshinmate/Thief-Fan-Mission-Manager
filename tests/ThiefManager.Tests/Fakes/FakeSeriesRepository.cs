@@ -53,6 +53,13 @@ public class FakeSeriesRepository : ISeriesRepository
         return Task.CompletedTask;
     }
 
+    public Task SetAllExpandedAsync(bool isExpanded)
+    {
+        foreach (var series in SeriesList)
+            series.IsExpanded = isExpanded;
+        return Task.CompletedTask;
+    }
+
     public Task SetExpandedAsync(int id, bool isExpanded)
     {
         var series = SeriesList.FirstOrDefault(s => s.Id == id);

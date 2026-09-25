@@ -20,6 +20,9 @@ public interface ISeriesRepository
     Task RenameAsync(int id, string name);
     Task SetExpandedAsync(int id, bool isExpanded);
 
+    /// <summary>Expands or collapses every series in one save (Collapse All / Expand All).</summary>
+    Task SetAllExpandedAsync(bool isExpanded);
+
     Task<List<SeriesPart>> GetAllPartsAsync();
 
     /// <summary>Replaces the series' stored part list with <paramref name="parts"/> in one save.</summary>
