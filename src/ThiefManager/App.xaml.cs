@@ -32,6 +32,7 @@ public partial class App : Application
         var missionRepository = new MissionRepository(CreateContext);
         var settingsRepository = new SettingsRepository(CreateContext);
         var ignoredFmRepository = new IgnoredFmRepository(CreateContext);
+        var seriesRepository = new SeriesRepository(CreateContext);
         var launchService = new LaunchService(new ProcessLauncher(), new FileExistsChecker());
         var directoryReader = new DirectoryReader();
         var archiveFileReader = new ArchiveFileReader();
@@ -39,7 +40,7 @@ public partial class App : Application
         var folderDeleter = new FolderDeleter();
         var thiefGuildLookupService = new ThiefGuildLookupService();
 
-        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter);
+        var mainViewModel = new MainViewModel(missionRepository, launchService, archiveInstaller, folderDeleter, seriesRepository);
         var settings = await settingsRepository.GetAsync();
 
         var isFirstRun = string.IsNullOrWhiteSpace(settings.Thief1FmFolder)
