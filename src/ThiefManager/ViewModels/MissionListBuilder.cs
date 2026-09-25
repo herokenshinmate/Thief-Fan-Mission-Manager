@@ -11,17 +11,23 @@ public static class MissionListBuilder
     /// similar values for every sort field. The exception is Title, where the unit is ordered by the
     /// series name. Members follow their header in series order regardless of the chosen sort, and
     /// only when the series is expanded.
+    /// When <paramref name="includeMissingParts"/> is set, an expanded series with a known part list also lists, in position order, placeholders for the parts no owned mission occupies (checked against every owned member, not just the filtered ones).
     /// </summary>
     public static IReadOnlyList<MissionListRow> Build(
         IReadOnlyList<FanMission> filteredSorted,
         IReadOnlyList<FanMission> allMissions,
         IReadOnlyList<Series> series,
         SortField sortField,
-        bool ascending)
+        bool ascending,
+        IReadOnlyList<SeriesPart>? parts = null,
+        bool includeMissingParts = false)
     {
         var seriesById = series.ToDictionary(s => s.Id);
         var units = new List<Unit>();
         var groups = new Dictionary<int, GroupUnit>();
+        var partsBySeries = (parts ?? Array.Empty<SeriesPart>())
+            .GroupBy(p => p.SeriesId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(p => p.Position).ToList());
 
         foreach (var mission in filteredSorted)
         {
@@ -61,19 +67,31 @@ public static class MissionListBuilder
                 case GroupUnit group:
                     var owned = allMissions.Where(m => m.SeriesId == group.Series.Id).ToList();
                     var games = owned.Select(m => m.Game).Distinct().ToList();
+                    partsBySeries.TryGetValue(group.Series.Id, out var seriesParts);
                     rows.Add(new SeriesHeaderRow(
                         group.Series,
                         group.Members.Count,
                         owned.Count,
                         owned.Count(m => m.Status == MissionStatus.Completed),
-                        games.Count == 1 ? games[0] : null));
+                        games.Count == 1 ? games[0] : null,
+                        seriesParts?.Count));
 
                     if (group.Series.IsExpanded)
                     {
-                        foreach (var member in group.Members
-                                     .OrderBy(m => m.SeriesPosition ?? int.MaxValue)
-                                     .ThenBy(m => m.Title, StringComparer.CurrentCulture))
-                            rows.Add(new MissionRow(member, isSeriesMember: true));
+                        var entries = group.Members
+                            .Select(m => (Position: m.SeriesPosition, Title: m.Title, Row: (MissionListRow)new MissionRow(m, isSeriesMember: true)))
+                            .ToList();
+                        if (includeMissingParts && seriesParts is not null)
+                        {
+                            entries.AddRange(seriesParts
+                                .Where(p => owned.All(m => m.SeriesPosition != p.Position))
+                                .Select(p => (Position: (int?)p.Position, Title: p.Title, Row: (MissionListRow)new MissingPartRow(p))));
+                        }
+
+                        foreach (var entry in entries
+                                     .OrderBy(e => e.Position ?? int.MaxValue)
+                                     .ThenBy(e => e.Title, StringComparer.CurrentCulture))
+                            rows.Add(entry.Row);
                     }
                     break;
             }
