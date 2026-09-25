@@ -9,6 +9,13 @@ public class SeriesAssignerTests
 {
     private readonly FakeSeriesRepository _seriesRepo = new(new FakeMissionRepository());
 
+    private static ThiefGuildSeriesInfo InfoWithParts(int position) => new(66445, "The Book of Prophecy", position, new[]
+    {
+        new ThiefGuildSeriesPartInfo(1, "Part 1", "https://www.thiefguild.com/fanmissions/2684/p1"),
+        new ThiefGuildSeriesPartInfo(2, "Part 2", "https://www.thiefguild.com/fanmissions/2682/p2"),
+        new ThiefGuildSeriesPartInfo(3, "Part 3", null)
+    });
+
     [Fact]
     public async Task ApplyAsync_WithNoSeriesInfo_OnlyMarksChecked()
     {
@@ -58,5 +65,39 @@ public class SeriesAssignerTests
         Assert.Equal(1, mission.SeriesPosition);
         Assert.True(mission.SeriesLookupChecked);
         Assert.Empty(_seriesRepo.SeriesList);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_MissionAlreadyChecked_IsNotAssignedASeries()
+    {
+        var mission = new FanMission { SeriesLookupChecked = true };
+
+        await SeriesAssigner.ApplyAsync(mission, InfoWithParts(3), _seriesRepo);
+
+        Assert.Null(mission.SeriesId);
+        Assert.Empty(_seriesRepo.SeriesList);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WithParts_StoresTheSeriesPartList()
+    {
+        var mission = new FanMission();
+
+        await SeriesAssigner.ApplyAsync(mission, InfoWithParts(3), _seriesRepo);
+
+        Assert.Equal(new[] { "Part 1", "Part 2", "Part 3" },
+            _seriesRepo.PartsList.Where(p => p.SeriesId == mission.SeriesId).OrderBy(p => p.Position).Select(p => p.Title));
+    }
+
+    [Fact]
+    public async Task ApplyAsync_MissionInADifferentSeries_DoesNotTouchItsParts()
+    {
+        var manual = await _seriesRepo.GetOrCreateByNameAsync("My Own Series");
+        await _seriesRepo.ReplacePartsAsync(manual.Id, new[] { new SeriesPart { Position = 1, Title = "Mine" } });
+        var mission = new FanMission { SeriesId = manual.Id, SeriesPosition = 1 };
+
+        await SeriesAssigner.ApplyAsync(mission, InfoWithParts(3), _seriesRepo);
+
+        Assert.Equal("Mine", Assert.Single(_seriesRepo.PartsList).Title);
     }
 }
