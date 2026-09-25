@@ -211,6 +211,7 @@ public partial class MainViewModel : ObservableObject
     {
         // Captured before Clear(): clearing makes the ListView push a null selection back.
         var selectedMissionId = SelectedMission?.Id;
+        var selectedMissionSeriesId = SelectedMission?.SeriesId;
         var selectedSeriesId = (SelectedRow as SeriesHeaderRow)?.Series.Id;
 
         var filtered = MissionQuery.Apply(_allMissions, GameFilter, StatusFilter, TagFilter, SortField, SortAscending, InstallStatusFilter, AuthorFilter).ToList();
@@ -221,7 +222,8 @@ public partial class MainViewModel : ObservableObject
             VisibleRows.Add(row);
 
         SelectedRow = rows.FirstOrDefault(r => selectedMissionId is not null && r is MissionRow m && m.Mission.Id == selectedMissionId)
-            ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId);
+            ?? rows.FirstOrDefault(r => selectedSeriesId is not null && r is SeriesHeaderRow h && h.Series.Id == selectedSeriesId)
+            ?? rows.FirstOrDefault(r => selectedMissionSeriesId is not null && r is SeriesHeaderRow h2 && h2.Series.Id == selectedMissionSeriesId);
     }
 
     private void LaunchSelected()
