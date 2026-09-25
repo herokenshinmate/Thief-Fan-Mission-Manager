@@ -8,5 +8,7 @@ public enum SortField
     InstallStatus,
     Rating,
     Author,
-    Tags
+    Tags,
+    ThiefGuildRating,
+    MissionType
 }
