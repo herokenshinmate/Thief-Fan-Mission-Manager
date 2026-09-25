@@ -12,6 +12,9 @@ public static class MissionListBuilder
     /// series name. Members follow their header in series order regardless of the chosen sort, and
     /// only when the series is expanded.
     /// When <paramref name="includeMissingParts"/> is set, an expanded series with a known part list also lists, in position order, placeholders for the parts no owned mission occupies (checked against every owned member, not just the filtered ones).
+    /// Rows are grouped under one GameHeaderRow per game (Thief1 then Thief2) that has shown missions;
+    /// a collapsed game contributes only its banner, and grouping, sorting and placeholders then apply
+    /// within each game.
     /// </summary>
     public static IReadOnlyList<MissionListRow> Build(
         IReadOnlyList<FanMission> filteredSorted,
@@ -20,16 +23,61 @@ public static class MissionListBuilder
         SortField sortField,
         bool ascending,
         IReadOnlyList<SeriesPart>? parts = null,
-        bool includeMissingParts = false)
+        bool includeMissingParts = false,
+        IReadOnlySet<GameTitle>? collapsedGames = null)
     {
         var seriesById = series.ToDictionary(s => s.Id);
-        var units = new List<Unit>();
-        var groups = new Dictionary<int, GroupUnit>();
         var partsBySeries = (parts ?? Array.Empty<SeriesPart>())
             .GroupBy(p => p.SeriesId)
             .ToDictionary(g => g.Key, g => g.OrderBy(p => p.Position).ToList());
 
-        foreach (var mission in filteredSorted)
+        // Placeholders for a series spanning both games are listed once: under the game of its
+        // lowest-positioned shown member (so a Game filter can't make them disappear).
+        var placeholderGameBySeries = filteredSorted
+            .Where(m => m.SeriesId is int id && seriesById.ContainsKey(id))
+            .GroupBy(m => m.SeriesId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(m => m.SeriesPosition ?? int.MaxValue).ThenBy(m => m.Game).First().Game);
+
+        var rows = new List<MissionListRow>();
+        foreach (var game in Enum.GetValues<GameTitle>())
+        {
+            var gameShown = filteredSorted.Where(m => m.Game == game).ToList();
+            if (gameShown.Count == 0)
+                continue;
+
+            var isExpanded = collapsedGames is null || !collapsedGames.Contains(game);
+            rows.Add(new GameHeaderRow(
+                game,
+                isExpanded,
+                gameShown.Count,
+                allMissions.Count(m => m.Game == game),
+                gameShown.Count(m => m.Status == MissionStatus.Completed),
+                gameShown.Count(m => m.InstallStatus == InstallStatus.Installed)));
+
+            if (isExpanded)
+                rows.AddRange(BuildGameRows(game, gameShown, allMissions, seriesById, partsBySeries, placeholderGameBySeries, sortField, ascending, includeMissingParts));
+        }
+
+        return rows;
+    }
+
+    private static List<MissionListRow> BuildGameRows(
+        GameTitle game,
+        List<FanMission> gameShown,
+        IReadOnlyList<FanMission> allMissions,
+        Dictionary<int, Series> seriesById,
+        Dictionary<int, List<SeriesPart>> partsBySeries,
+        Dictionary<int, GameTitle> placeholderGameBySeries,
+        SortField sortField,
+        bool ascending,
+        bool includeMissingParts)
+    {
+        var units = new List<Unit>();
+        var groups = new Dictionary<int, GroupUnit>();
+
+        foreach (var mission in gameShown)
         {
             if (mission.SeriesId is int seriesId && seriesById.TryGetValue(seriesId, out var owningSeries))
             {
@@ -65,7 +113,8 @@ public static class MissionListBuilder
                     break;
 
                 case GroupUnit group:
-                    var owned = allMissions.Where(m => m.SeriesId == group.Series.Id).ToList();
+                    var owned = allMissions.Where(m => m.SeriesId == group.Series.Id && m.Game == game).ToList();
+                    var ownedAnyGame = allMissions.Where(m => m.SeriesId == group.Series.Id).ToList();
                     var games = owned.Select(m => m.Game).Distinct().ToList();
                     partsBySeries.TryGetValue(group.Series.Id, out var seriesParts);
                     rows.Add(new SeriesHeaderRow(
@@ -81,10 +130,10 @@ public static class MissionListBuilder
                         var entries = group.Members
                             .Select(m => (Position: m.SeriesPosition, Title: m.Title, Row: (MissionListRow)new MissionRow(m, isSeriesMember: true)))
                             .ToList();
-                        if (includeMissingParts && seriesParts is not null)
+                        if (includeMissingParts && seriesParts is not null && placeholderGameBySeries.GetValueOrDefault(group.Series.Id) == game)
                         {
                             entries.AddRange(seriesParts
-                                .Where(p => owned.All(m => m.SeriesPosition != p.Position))
+                                .Where(p => ownedAnyGame.All(m => m.SeriesPosition != p.Position))
                                 .Select(p => (Position: (int?)p.Position, Title: p.Title, Row: (MissionListRow)new MissingPartRow(p))));
                         }
 

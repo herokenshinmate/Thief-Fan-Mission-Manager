@@ -32,9 +32,12 @@ public class MissionListBuilderTests
         _ => Describe(row)
     };
 
+    private static IReadOnlyList<MissionListRow> WithoutBanners(IReadOnlyList<MissionListRow> rows) =>
+        rows.Where(r => r is not GameHeaderRow).ToList();
+
     private static string[] Build(IReadOnlyList<FanMission> filteredSorted, IReadOnlyList<FanMission> all,
         IReadOnlyList<Series> series, SortField sortField = SortField.Title, bool ascending = true) =>
-        MissionListBuilder.Build(filteredSorted, all, series, sortField, ascending).Select(Describe).ToArray();
+        WithoutBanners(MissionListBuilder.Build(filteredSorted, all, series, sortField, ascending)).Select(Describe).ToArray();
 
     [Fact]
     public void Build_WithNoSeries_KeepsGivenOrder()
@@ -95,7 +98,7 @@ public class MissionListBuilderTests
         var p2 = M(2, "P2", 1, 2, MissionStatus.Completed);
         var p3 = M(3, "P3", 1, 3);
 
-        var rows = MissionListBuilder.Build(new[] { p1 }, new[] { p1, p2, p3 }, new[] { S(1, "Book") }, SortField.Title, true);
+        var rows = WithoutBanners(MissionListBuilder.Build(new[] { p1 }, new[] { p1, p2, p3 }, new[] { S(1, "Book") }, SortField.Title, true));
 
         var header = Assert.IsType<SeriesHeaderRow>(rows[0]);
         Assert.Equal(1, header.ShownCount);
@@ -143,24 +146,10 @@ public class MissionListBuilderTests
     {
         var missions = new[] { M(1, "Part 3", 1, 3), M(2, "Extra", 1, null) };
 
-        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true);
+        var rows = WithoutBanners(MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true));
 
         Assert.Equal("#3 · Part 3", ((MissionRow)rows[1]).DisplayTitle);
         Assert.Equal("Extra", ((MissionRow)rows[2]).DisplayTitle);
-    }
-
-    [Fact]
-    public void Build_CommonGame_SetOnlyWhenAllMembersShareIt()
-    {
-        var same = new[] { M(1, "A1", 1, 1, game: GameTitle.Thief1), M(2, "A2", 1, 2, game: GameTitle.Thief1) };
-        var mixed = new[] { M(3, "B1", 2, 1, game: GameTitle.Thief1), M(4, "B2", 2, 2, game: GameTitle.Thief2) };
-        var all = same.Concat(mixed).ToArray();
-
-        var headers = MissionListBuilder.Build(all, all, new[] { S(1, "A"), S(2, "B") }, SortField.Title, true)
-            .OfType<SeriesHeaderRow>().ToList();
-
-        Assert.Equal(GameTitle.Thief1, headers.Single(h => h.Series.Name == "A").CommonGame);
-        Assert.Null(headers.Single(h => h.Series.Name == "B").CommonGame);
     }
 
     [Fact]
@@ -168,7 +157,7 @@ public class MissionListBuilderTests
     {
         var missions = new[] { M(1, "Part 3", 1, 3), M(2, "Part 2", 1, 2) };
 
-        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true);
+        var rows = WithoutBanners(MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true));
 
         Assert.Equal(new[] { "[Book]", "  ?Dead Letter Box", "  Part 2", "  Part 3" }, rows.Select(DescribeWithParts));
         Assert.Equal("Book (2 of 3 owned)", ((SeriesHeaderRow)rows[0]).HeaderText);
@@ -180,7 +169,7 @@ public class MissionListBuilderTests
     {
         var missions = new[] { M(1, "Part 3", 1, 3) };
 
-        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: false);
+        var rows = WithoutBanners(MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: false));
 
         Assert.Equal(new[] { "[Book]", "  Part 3" }, rows.Select(DescribeWithParts));
         Assert.Equal("Book (1 of 3 owned)", ((SeriesHeaderRow)rows[0]).HeaderText);
@@ -191,7 +180,7 @@ public class MissionListBuilderTests
     {
         var missions = new[] { M(1, "Part 3", 1, 3) };
 
-        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book", expanded: false) }, SortField.Title, true, BookParts, includeMissingParts: true);
+        var rows = WithoutBanners(MissionListBuilder.Build(missions, missions, new[] { S(1, "Book", expanded: false) }, SortField.Title, true, BookParts, includeMissingParts: true));
 
         Assert.Equal(new[] { "[Book]" }, rows.Select(DescribeWithParts));
     }
@@ -202,7 +191,7 @@ public class MissionListBuilderTests
         var shown = M(1, "Part 3", 1, 3, game: GameTitle.Thief2);
         var hiddenByGameFilter = M(2, "Part 1", 1, 1, game: GameTitle.Thief1);
 
-        var rows = MissionListBuilder.Build(new[] { shown }, new[] { shown, hiddenByGameFilter }, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true);
+        var rows = WithoutBanners(MissionListBuilder.Build(new[] { shown }, new[] { shown, hiddenByGameFilter }, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true));
 
         Assert.Equal(new[] { "[Book]", "  ?The Hidden City", "  Part 3" }, rows.Select(DescribeWithParts));
     }
@@ -212,7 +201,7 @@ public class MissionListBuilderTests
     {
         var missions = new[] { M(1, "P1", 1, 1) };
 
-        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, Array.Empty<SeriesPart>(), includeMissingParts: true);
+        var rows = WithoutBanners(MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, Array.Empty<SeriesPart>(), includeMissingParts: true));
 
         Assert.Equal("Book (1)", ((SeriesHeaderRow)rows[0]).HeaderText);
     }
@@ -227,5 +216,112 @@ public class MissionListBuilderTests
         Assert.Equal("Campaign · 10", rated.MissionTypeDisplay);
         Assert.Null(single.ThiefGuildRatingDisplay);
         Assert.Null(single.MissionTypeDisplay);
+    }
+
+    private static FanMission G(int id, string title, GameTitle game,
+        MissionStatus status = MissionStatus.NotPlayed, InstallStatus install = InstallStatus.Installed) =>
+        new() { Id = id, Title = title, Game = game, Status = status, InstallStatus = install };
+
+    private static string DescribeAll(MissionListRow row) => row switch
+    {
+        GameHeaderRow g => $"=={g.Game}==",
+        _ => DescribeWithParts(row)
+    };
+
+    [Fact]
+    public void Build_GroupsMissionsUnderGameBanners_InGameOrder()
+    {
+        var missions = new[] { G(1, "T2 Mission", GameTitle.Thief2), G(2, "T1 Mission", GameTitle.Thief1) };
+
+        var rows = MissionListBuilder.Build(missions, missions, Array.Empty<Series>(), SortField.Rating, true);
+
+        Assert.Equal(new[] { "==Thief1==", "T1 Mission", "==Thief2==", "T2 Mission" }, rows.Select(DescribeAll));
+    }
+
+    [Fact]
+    public void Build_CollapsedGame_EmitsOnlyItsBanner()
+    {
+        var missions = new[] { G(1, "T2 Mission", GameTitle.Thief2), G(2, "T1 Mission", GameTitle.Thief1) };
+
+        var rows = MissionListBuilder.Build(missions, missions, Array.Empty<Series>(), SortField.Rating, true,
+            collapsedGames: new HashSet<GameTitle> { GameTitle.Thief1 });
+
+        Assert.Equal(new[] { "==Thief1==", "==Thief2==", "T2 Mission" }, rows.Select(DescribeAll));
+        var banner = (GameHeaderRow)rows[0];
+        Assert.False(banner.IsExpanded);
+        Assert.Equal("▶", banner.ChevronGlyph);
+    }
+
+    [Fact]
+    public void Build_GameWithNoShownMissions_HasNoBanner()
+    {
+        var t1 = G(1, "T1", GameTitle.Thief1);
+        var t2 = G(2, "T2", GameTitle.Thief2);
+
+        var rows = MissionListBuilder.Build(new[] { t2 }, new[] { t1, t2 }, Array.Empty<Series>(), SortField.Title, true);
+
+        Assert.Equal(new[] { "==Thief2==", "T2" }, rows.Select(DescribeAll));
+    }
+
+    [Fact]
+    public void Build_GameBannerStats_CountShownMissions()
+    {
+        var a = G(1, "A", GameTitle.Thief1, MissionStatus.Completed);
+        var b = G(2, "B", GameTitle.Thief1, install: InstallStatus.NotInstalled);
+        var c = G(3, "C", GameTitle.Thief1);
+        var all = new[] { a, b, c };
+
+        var full = (GameHeaderRow)MissionListBuilder.Build(all, all, Array.Empty<Series>(), SortField.Title, true)[0];
+        var filtered = (GameHeaderRow)MissionListBuilder.Build(new[] { a }, all, Array.Empty<Series>(), SortField.Title, true)[0];
+        var single = (GameHeaderRow)MissionListBuilder.Build(new[] { a }, new[] { a }, Array.Empty<Series>(), SortField.Title, true)[0];
+
+        Assert.Equal("3 missions · 1 completed · 2 installed", full.StatsText);
+        Assert.Equal("1 of 3 missions shown · 1 completed · 1 installed", filtered.StatsText);
+        Assert.Equal("1 mission · 1 completed · 1 installed", single.StatsText);
+    }
+
+    [Fact]
+    public void Build_KeepsSortOrderWithinEachGame()
+    {
+        // Already sorted (e.g. by rating descending) across both games.
+        var sorted = new[] { G(1, "Z", GameTitle.Thief2), G(2, "Y", GameTitle.Thief1), G(3, "X", GameTitle.Thief2), G(4, "W", GameTitle.Thief1) };
+
+        var rows = MissionListBuilder.Build(sorted, sorted, Array.Empty<Series>(), SortField.Rating, false);
+
+        Assert.Equal(new[] { "==Thief1==", "Y", "W", "==Thief2==", "Z", "X" }, rows.Select(DescribeAll));
+    }
+
+    [Fact]
+    public void Build_SeriesSpanningBothGames_ShowsUnderEachGameWithPlaceholdersOnce()
+    {
+        var part1 = M(1, "Part 1", 1, 1, game: GameTitle.Thief1);
+        var part3 = M(3, "Part 3", 1, 3, game: GameTitle.Thief2);
+        var missions = new[] { part1, part3 };
+
+        var rows = MissionListBuilder.Build(missions, missions, new[] { S(1, "Book") }, SortField.Title, true, BookParts, includeMissingParts: true);
+
+        Assert.Equal(new[] { "==Thief1==", "[Book]", "  Part 1", "  ?The Hidden City", "==Thief2==", "[Book]", "  Part 3" },
+            rows.Select(DescribeAll));
+        var headers = rows.OfType<SeriesHeaderRow>().ToList();
+        Assert.Equal(GameTitle.Thief1, headers[0].CommonGame);
+        Assert.Equal(GameTitle.Thief2, headers[1].CommonGame);
+    }
+
+    [Fact]
+    public void Rows_AccentAndCampaignBadge()
+    {
+        var campaignInSeries = new MissionRow(new FanMission { CampaignMissionCount = 10 }, isSeriesMember: true);
+        var seriesMember = new MissionRow(new FanMission { CampaignMissionCount = 1 }, isSeriesMember: true);
+        var plain = new MissionRow(new FanMission(), isSeriesMember: false);
+
+        Assert.Equal(AccentKind.Campaign, campaignInSeries.Accent);
+        Assert.True(campaignInSeries.IsPackedCampaign);
+        Assert.Equal("CAMPAIGN · 10", campaignInSeries.CampaignBadgeText);
+        Assert.Equal(AccentKind.Series, seriesMember.Accent);
+        Assert.Null(seriesMember.CampaignBadgeText);
+        Assert.Equal(AccentKind.None, plain.Accent);
+        Assert.Equal(AccentKind.Series, new SeriesHeaderRow(S(1, "Book"), 1, 1, 0, null).Accent);
+        Assert.Equal(AccentKind.Series, new MissingPartRow(P(1, 1, "Part 1")).Accent);
+        Assert.Equal(AccentKind.None, new GameHeaderRow(GameTitle.Thief1, true, 1, 1, 0, 0).Accent);
     }
 }
