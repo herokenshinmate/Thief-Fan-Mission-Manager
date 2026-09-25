@@ -42,7 +42,6 @@ public static class MissionQuery
         object KeySelector(FanMission m) => sortField switch
         {
             SortField.Title => m.Title,
-            SortField.Game => m.Game,
             SortField.Status => m.Status,
             SortField.InstallStatus => m.InstallStatus,
             SortField.Rating => m.Rating ?? -1,

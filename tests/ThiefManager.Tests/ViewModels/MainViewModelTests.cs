@@ -85,18 +85,20 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public async Task LoadCommand_DefaultsToSortingByGameWithThief1First()
+    public async Task LoadCommand_DefaultsToTitleSortWithinEachGameBanner()
     {
         var repo = new FakeMissionRepository();
-        await repo.AddAsync(new FanMission { Title = "T2 Mission", Game = GameTitle.Thief2, FolderPath = "p1" });
-        await repo.AddAsync(new FanMission { Title = "T1 Mission", Game = GameTitle.Thief1, FolderPath = "p2" });
+        await repo.AddAsync(new FanMission { Title = "Zeal", Game = GameTitle.Thief2, FolderPath = "p1" });
+        await repo.AddAsync(new FanMission { Title = "Ashes", Game = GameTitle.Thief2, FolderPath = "p2" });
+        await repo.AddAsync(new FanMission { Title = "T1 Mission", Game = GameTitle.Thief1, FolderPath = "p3" });
         var vm = MakeViewModel(repo);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Equal(SortField.Game, vm.SortField);
+        Assert.Equal(SortField.Title, vm.SortField);
         Assert.True(vm.SortAscending);
-        Assert.Equal(new[] { "T1 Mission", "T2 Mission" }, vm.VisibleMissions.Select(m => m.Title));
+        Assert.Equal(new[] { "T1 Mission", "Ashes", "Zeal" }, vm.VisibleMissions.Select(m => m.Title));
+        Assert.DoesNotContain("Game", vm.SortFieldOptions);
     }
 
     [Fact]

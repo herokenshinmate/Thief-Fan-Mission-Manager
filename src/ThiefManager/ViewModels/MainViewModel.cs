@@ -153,7 +153,6 @@ public partial class MainViewModel : ObservableObject
     private static readonly (SortField Field, string Name)[] SortFieldNames =
     {
         (SortField.Title, "Title"),
-        (SortField.Game, "Game"),
         (SortField.Status, "Status"),
         (SortField.InstallStatus, "Install Status"),
         (SortField.Rating, "Rating"),
@@ -172,7 +171,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    private SortField sortField = SortField.Game;
+    private SortField sortField = SortField.Title;
 
     [ObservableProperty]
     private bool sortAscending = true;

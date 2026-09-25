@@ -66,7 +66,6 @@ public partial class MainWindow : FluentWindow
         _sortableColumns = new Dictionary<System.Windows.Controls.GridViewColumn, SortField>
         {
             [TitleColumn] = SortField.Title,
-            [GameColumn] = SortField.Game,
             [StatusColumn] = SortField.Status,
             [InstallStatusColumn] = SortField.InstallStatus,
             [RatingColumn] = SortField.Rating,

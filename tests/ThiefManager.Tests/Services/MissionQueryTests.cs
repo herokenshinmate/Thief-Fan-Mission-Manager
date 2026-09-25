@@ -76,20 +76,6 @@ public class MissionQueryTests
     }
 
     [Fact]
-    public void Apply_SortsByGameAscendingWithThief1First()
-    {
-        var missions = new[]
-        {
-            Mission("B", GameTitle.Thief2, MissionStatus.NotPlayed, null),
-            Mission("A", GameTitle.Thief1, MissionStatus.NotPlayed, null)
-        };
-
-        var result = MissionQuery.Apply(missions, null, null, null, SortField.Game, true);
-
-        Assert.Equal(new[] { "A", "B" }, result.Select(m => m.Title));
-    }
-
-    [Fact]
     public void Apply_SortsByAuthor()
     {
         var missions = new[]

@@ -291,7 +291,7 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn x:Name="TitleColumn" Header="Title" Width="220">
+                    <GridViewColumn x:Name="TitleColumn" Header="Title" Width="440">
                         <GridViewColumn.CellTemplateSelector>
                             <views:MissionListRowTemplateSelector>
                                 <views:MissionListRowTemplateSelector.MissionTemplate>
@@ -333,34 +333,6 @@
                                                    Foreground="{StaticResource MutedForegroundBrush}" TextTrimming="CharacterEllipsis"/>
                                     </DataTemplate>
                                 </views:MissionListRowTemplateSelector.MissingPartTemplate>
-                            </views:MissionListRowTemplateSelector>
-                        </GridViewColumn.CellTemplateSelector>
-                    </GridViewColumn>
-                    <GridViewColumn x:Name="GameColumn" Header="Game" Width="220">
-                        <GridViewColumn.CellTemplateSelector>
-                            <views:MissionListRowTemplateSelector>
-                                <views:MissionListRowTemplateSelector.MissionTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Grid Width="20" Height="20" Margin="0,0,6,0">
-                                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding Mission.Game, Converter={StaticResource GameTitleToBrushConverter}}"/>
-                                                <Image Source="{Binding Mission.Game, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
-                                            </Grid>
-                                            <TextBlock Text="{Binding Mission.Game, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </views:MissionListRowTemplateSelector.MissionTemplate>
-                                <views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Visibility="{Binding CommonGame, Converter={StaticResource NullToVisibilityConverter}}">
-                                            <Grid Width="20" Height="20" Margin="0,0,6,0">
-                                                <ui:SymbolIcon Symbol="Games24" Foreground="{Binding CommonGame, Converter={StaticResource GameTitleToBrushConverter}}"/>
-                                                <Image Source="{Binding CommonGame, Converter={StaticResource GameTitleToIconSourceConverter}}" Stretch="Uniform"/>
-                                            </Grid>
-                                            <TextBlock Text="{Binding CommonGame, Converter={StaticResource GameTitleToDisplayNameConverter}}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
                             </views:MissionListRowTemplateSelector>
                         </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
