@@ -48,14 +48,22 @@ public class SeriesBackfillService
                 await _delay(DelayBetweenRequests, cancellationToken);
 
             var mission = candidates[i];
-            var result = await _lookupService.FetchByUrlAsync(mission.ThiefGuildUrl!);
-            if (result is not null)
+            try
             {
-                await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
-                // Series columns only: `mission` was loaded before the loop and may be stale.
-                await _missionRepository.ApplySeriesLookupAsync(mission.Id, mission.SeriesId, mission.SeriesPosition);
-                if (mission.SeriesId is not null)
-                    SeriesAssigned?.Invoke(this, EventArgs.Empty);
+                var result = await _lookupService.FetchByUrlAsync(mission.ThiefGuildUrl!);
+                if (result is not null)
+                {
+                    await SeriesAssigner.ApplyAsync(mission, result.Series, _seriesRepository);
+                    // Series columns only: `mission` was loaded before the loop and may be stale.
+                    await _missionRepository.ApplySeriesLookupAsync(mission.Id, mission.SeriesId, mission.SeriesPosition);
+                    if (mission.SeriesId is not null)
+                        SeriesAssigned?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // A malformed URL or unexpected failure for this mission shouldn't stop the rest
+                // of the backfill; it's left unchecked and retried on the next launch.
             }
 
             progress?.Report((i + 1, candidates.Count));

@@ -11,6 +11,7 @@ public class SeriesBackfillServiceTests
     {
         public Dictionary<string, ThiefGuildLookupResult?> Results { get; } = new();
         public List<string> FetchedUrls { get; } = new();
+        public HashSet<string> Throws { get; } = new();
         public Action? OnFetch;
 
         public Task<ThiefGuildLookupResult?> SearchByTitleAsync(string title) => Task.FromResult<ThiefGuildLookupResult?>(null);
@@ -19,6 +20,8 @@ public class SeriesBackfillServiceTests
         {
             FetchedUrls.Add(url);
             OnFetch?.Invoke();
+            if (Throws.Contains(url))
+                throw new InvalidOperationException($"Bad URL: {url}");
             return Task.FromResult(Results.GetValueOrDefault(url));
         }
     }
@@ -96,6 +99,25 @@ public class SeriesBackfillServiceTests
         await MakeService().RunAsync(null, CancellationToken.None);
 
         Assert.False(_missions.Missions.Single().SeriesLookupChecked);
+    }
+
+    [Fact]
+    public async Task RunAsync_LookupThrows_SkipsMissionAndContinues()
+    {
+        await _missions.AddAsync(new FanMission { Title = "Bad", ThiefGuildUrl = "u1" });
+        await _missions.AddAsync(new FanMission { Title = "Good", ThiefGuildUrl = "u2" });
+        _lookup.Throws.Add("u1");
+        _lookup.Results["u2"] = Result("u2", new ThiefGuildSeriesInfo(66445, "The Book of Prophecy", 3));
+
+        await MakeService().RunAsync(null, CancellationToken.None);
+
+        Assert.Equal(new[] { "u1", "u2" }, _lookup.FetchedUrls);
+        var bad = _missions.Missions.Single(m => m.Title == "Bad");
+        var good = _missions.Missions.Single(m => m.Title == "Good");
+        Assert.False(bad.SeriesLookupChecked);
+        Assert.Null(bad.SeriesId);
+        Assert.True(good.SeriesLookupChecked);
+        Assert.NotNull(good.SeriesId);
     }
 
     [Fact]
