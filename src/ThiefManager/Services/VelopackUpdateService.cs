@@ -9,19 +9,30 @@ public class VelopackUpdateService : IUpdateService
     private const string RepoUrl = "https://github.com/herokenshinmate/ThiefFMManager";
 
     private readonly UpdateManager _manager = new(new GithubSource(RepoUrl, null, false));
+    private readonly SemaphoreSlim _checkLock = new(1, 1);
     private UpdateInfo? _downloaded;
 
     public bool IsInstalled => _manager.IsInstalled;
 
     public async Task<AvailableUpdate?> CheckAndDownloadAsync()
     {
-        var info = await _manager.CheckForUpdatesAsync();
-        if (info is null)
-            return null;
+        // Velopack's DownloadUpdatesAsync takes a global lock; without this, a manual check
+        // started while the startup check is still downloading can fail instead of just waiting.
+        await _checkLock.WaitAsync();
+        try
+        {
+            var info = await _manager.CheckForUpdatesAsync();
+            if (info is null)
+                return null;
 
-        await _manager.DownloadUpdatesAsync(info);
-        _downloaded = info;
-        return new AvailableUpdate(info.TargetFullRelease.Version.ToString(), info.TargetFullRelease.NotesMarkdown);
+            await _manager.DownloadUpdatesAsync(info);
+            _downloaded = info;
+            return new AvailableUpdate(info.TargetFullRelease.Version.ToString(), info.TargetFullRelease.NotesMarkdown);
+        }
+        finally
+        {
+            _checkLock.Release();
+        }
     }
 
     public void ApplyAndRestart()

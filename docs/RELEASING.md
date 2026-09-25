@@ -2,6 +2,10 @@
 
 Releases are built and published by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed. The workflow tests the app, builds a self-contained Windows installer with [Velopack](https://velopack.io), and publishes a GitHub Release that installed copies update from.
 
+## Repository visibility
+
+The repository must be public: installed copies check for updates anonymously, and users download the installer from Releases.
+
 ## Cutting a release
 
 1. Bump `AppVersion.Current` in `src/ThiefManager/AppVersion.cs`. Use a patch bump for normal changes, e.g. `3.9.7` → `3.9.8`.
@@ -14,13 +18,14 @@ Releases are built and published by GitHub Actions (`.github/workflows/release.y
    ```
 5. Watch the **Release** workflow on the repository's Actions tab. When it finishes, the release appears under Releases with:
    - `ThiefFMManager-win-Setup.exe`: the installer for new users.
-   - Full and delta `.nupkg` packages and the `releases.win.json` feed, which installed copies use to update.
+   - `ThiefFMManager-win-Portable.zip`: a no-install portable copy.
+   - Full and delta `.nupkg` packages, the `releases.win.json` feed, and `assets.win.json`, which installed copies use to update.
 
 The workflow stops before building if:
 - the tag doesn't match `AppVersion.Current`, or the changelog has no entry for that version;
 - any test fails.
 
-To re-run a failed release without re-tagging, use **Run workflow** on the Release workflow and enter the existing tag.
+To re-run a failed release without re-tagging, use **Run workflow** on the Release workflow and enter the existing tag. If a failed run left a draft or partial release for the tag, delete that release (not the tag) on GitHub first; the upload won't overwrite an existing release.
 
 You can check the version and changelog locally before tagging:
 
@@ -28,8 +33,6 @@ You can check the version and changelog locally before tagging:
 
 ## Code signing (optional, currently off)
 
-Builds are currently unsigned, so Windows SmartScreen warns on first install. To sign them, add a repository secret named `SIGN_PARAMS`, containing the `signtool.exe` arguments Velopack should use. For example:
-
-    /fd sha256 /tr http://timestamp.digicert.com /td sha256 /f cert.pfx /p <password>
+Builds are currently unsigned, so Windows SmartScreen warns on first install. To sign them, add a repository secret named `SIGN_PARAMS`, containing the `signtool.exe` arguments Velopack should use. A certificate file isn't available on the build runner, so `SIGN_PARAMS` must use a signing method available there, such as a certificate installed in the runner's store or a cloud signing service's signtool parameters.
 
 The pack step then signs automatically. See `vpk pack --help` (`--signParams`) and the Velopack signing docs for other signing services.

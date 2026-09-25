@@ -8,18 +8,26 @@
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Version,
-    [string]$OutFile = 'release-notes.md'
+    [string]$OutFile = 'release-notes.md',
+    [string]$RepoRoot
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
+
+# PS 5.1 leaves $PSScriptRoot unset while evaluating a later parameter's default value when the
+# param block also has a Mandatory parameter, so the default is computed here instead of inline.
+if (-not $RepoRoot) {
+    $RepoRoot = Split-Path -Parent $PSScriptRoot
+}
 
 function Fail([string]$message) {
     [Console]::Error.WriteLine($message)
     exit 1
 }
 
-$appVersionSource = Get-Content -Raw (Join-Path $repoRoot 'src/ThiefManager/AppVersion.cs')
+# PS 5.1 reads BOM-less UTF-8 as ANSI unless told otherwise; -Encoding UTF8 fixes that for both
+# PS 5.1 and pwsh 7, keeping non-ASCII characters (em dashes, etc.) intact.
+$appVersionSource = Get-Content -Raw -Encoding UTF8 (Join-Path $RepoRoot 'src/ThiefManager/AppVersion.cs')
 $appVersionMatch = [regex]::Match($appVersionSource, 'Current\s*=\s*"([^"]+)"')
 if (-not $appVersionMatch.Success) {
     Fail "Couldn't read AppVersion.Current from src/ThiefManager/AppVersion.cs."
@@ -29,7 +37,7 @@ if ($appVersion -ne $Version) {
     Fail "Release version $Version doesn't match AppVersion.Current ($appVersion). Bump AppVersion.cs or fix the tag."
 }
 
-$changelogSource = Get-Content -Raw (Join-Path $repoRoot 'src/ThiefManager/ChangelogEntry.cs')
+$changelogSource = Get-Content -Raw -Encoding UTF8 (Join-Path $RepoRoot 'src/ThiefManager/ChangelogEntry.cs')
 $entryPattern = 'new\("' + [regex]::Escape($Version) + '",\s*"[^"]*",\s*new\[\]\s*\{(?<body>.*?)\}\)'
 $entry = [regex]::Match($changelogSource, $entryPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
 if (-not $entry.Success) {

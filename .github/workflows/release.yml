@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
   REPO_URL: https://github.com/${{ github.repository }}
   VPK_VERSION: 1.2.158
@@ -23,8 +27,12 @@ jobs:
       - name: Resolve tag and version
         id: tag
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.tag }}' } else { '${{ github.ref_name }}' }
+          $tag = if ($env:EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_TAG } else { $env:REF_NAME }
           if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') { throw "Tag '$tag' isn't in the form vX.Y.Z." }
           "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$($Matches[1])" >> $env:GITHUB_OUTPUT
@@ -53,9 +61,15 @@ jobs:
       # Fetches the previous release so vpk can build a small delta update. The very first release
       # has nothing to download, so a failure here is tolerated.
       - name: Download previous release
+        id: download
         shell: pwsh
         continue-on-error: true
         run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir releases
+
+      - name: Warn if no previous release was downloaded
+        if: steps.download.outcome == 'failure'
+        shell: pwsh
+        run: Write-Host "::warning::No previous release downloaded - this release will have no delta package (expected for the very first release)."
 
       - name: Pack installer and update packages
         shell: pwsh
