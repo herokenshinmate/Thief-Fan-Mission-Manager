@@ -7,6 +7,13 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.3", "2026-09-25", new[]
+        {
+            "Added TG Rating and Type columns to the mission list, showing each mission's Thief Guild community rating (e.g. ★ 9.02 (229)) and whether it's a campaign; both are sortable.",
+            "Mission Properties now show the Thief Guild rating, mission type and description, plus \"Sequel of\" / \"Has a sequel\" links for missions that aren't part of a series.",
+            "Series now list the parts you don't own as dimmed placeholders (e.g. \"#1 · Dead Letter Box — not in library\"), with the header showing how many you own; double-click one to open its Thief Guild page.",
+            "Added Refresh Thief Guild Data to re-fetch ratings and details for every linked mission. Missions already linked to Thief Guild are updated once automatically in the background."
+        }),
         new("3.9.2", "2026-09-25", new[]
         {
             "Fixed saving a mission's Properties marking a Not Installed mission as Installed and forgetting its downloaded archive, which left it unable to be installed from the menu."
