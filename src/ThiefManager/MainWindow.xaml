@@ -45,6 +45,13 @@
                     <ui:SymbolIcon Symbol="EyeOff24"/>
                 </MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="_Refresh Thief Guild Data..." Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="RefreshThiefGuildData_Click"
+                      IsEnabled="{Binding CanRefreshThiefGuild}"
+                      ToolTip="Re-fetch rating, type, description and series info for every mission linked to Thief Guild.">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ArrowClockwise24"/>
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="_Changelog" Style="{StaticResource CompactTopLevelMenuItemStyle}" Click="OpenChangelog_Click">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="DocumentBulletList24"/>
@@ -160,21 +167,33 @@
                             <ui:SymbolIcon Symbol="Dismiss24" Foreground="#FFE57373"/>
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="Open Series on Thief Guild" Click="OpenSeriesOnThiefGuild_Click"
+                              Visibility="{Binding CanOpenSelectedSeriesOnThiefGuild, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Open on Thief Guild" Click="OpenOnThiefGuild_Click"
+                              Visibility="{Binding CanOpenSelectedOnThiefGuild, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Properties..." Click="MissionProperties_Click"
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Info24"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Series..." Click="MissionProperties_Click"
                               ToolTip="Set or change this mission's series and position in Properties."
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFC9A227"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Set Status"
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Flag24"/>
                         </MenuItem.Icon>
@@ -199,22 +218,22 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
-                    <Separator Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <Separator Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <MenuItem Header="Install" Click="Install_Click"
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="#FFFFB74D"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Uninstall..." Click="Uninstall_Click"
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Delete24" Foreground="#FFE57373"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <Separator Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <MenuItem Header="Delete" Command="{Binding DeleteSelectedCommand}"
-                              Visibility="{Binding IsSeriesHeaderSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                              Visibility="{Binding ShowMissionMenuItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <MenuItem.Icon>
                             <ui:SymbolIcon Symbol="Delete24"/>
                         </MenuItem.Icon>
@@ -247,6 +266,12 @@
                                         </StackPanel>
                                     </DataTemplate>
                                 </views:MissionListRowTemplateSelector.SeriesHeaderTemplate>
+                                <views:MissionListRowTemplateSelector.MissingPartTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayTitle}" FontStyle="Italic" Margin="22,0,0,0"
+                                                   Foreground="{StaticResource MutedForegroundBrush}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissingPartTemplate>
                             </views:MissionListRowTemplateSelector>
                         </GridViewColumn.CellTemplateSelector>
                     </GridViewColumn>
@@ -323,6 +348,28 @@
                                                            Visibility="{Binding Mission.Rating, Converter={StaticResource NullToVisibilityConverter}}"/>
                                             <TextBlock Text="{Binding Mission.Rating}" VerticalAlignment="Center"/>
                                         </StackPanel>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="ThiefGuildRatingColumn" Header="TG Rating" Width="110">
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ThiefGuildRatingDisplay}" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </views:MissionListRowTemplateSelector.MissionTemplate>
+                            </views:MissionListRowTemplateSelector>
+                        </GridViewColumn.CellTemplateSelector>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="MissionTypeColumn" Header="Type" Width="110">
+                        <GridViewColumn.CellTemplateSelector>
+                            <views:MissionListRowTemplateSelector>
+                                <views:MissionListRowTemplateSelector.MissionTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding MissionTypeDisplay}" VerticalAlignment="Center"/>
                                     </DataTemplate>
                                 </views:MissionListRowTemplateSelector.MissionTemplate>
                             </views:MissionListRowTemplateSelector>

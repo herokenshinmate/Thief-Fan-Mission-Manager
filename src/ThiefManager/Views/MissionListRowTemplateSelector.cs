@@ -14,11 +14,13 @@ public class MissionListRowTemplateSelector : DataTemplateSelector
 
     public DataTemplate? MissionTemplate { get; set; }
     public DataTemplate? SeriesHeaderTemplate { get; set; }
+    public DataTemplate? MissingPartTemplate { get; set; }
 
     public override DataTemplate SelectTemplate(object item, DependencyObject container) => item switch
     {
         SeriesHeaderRow => SeriesHeaderTemplate ?? EmptyTemplate,
         MissionRow => MissionTemplate ?? EmptyTemplate,
+        MissingPartRow => MissingPartTemplate ?? EmptyTemplate,
         _ => EmptyTemplate
     };
 
