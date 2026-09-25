@@ -389,6 +389,48 @@ public partial class MainViewModel : ObservableObject
         await _missionRepository.UpdateAsync(mission);
     }
 
+    /// <summary>
+    /// Copies a mission the Thief Guild backfill just fetched onto the loaded copy, using the same
+    /// rules as IMissionRepository.ApplyThiefGuildMetadataAsync, so later whole-row saves from the
+    /// list don't write stale Thief Guild data back. Returns true when the list needs rebuilding
+    /// because the mission was newly placed into a series; rating, type and description changes
+    /// wait for the reload at the end of the run rather than resetting the list's scroll mid-run.
+    /// </summary>
+    public bool ApplyFetchedThiefGuildMetadata(FanMission fetched)
+    {
+        var live = _allMissions.FirstOrDefault(m => m.Id == fetched.Id);
+        if (live is null)
+            return false;
+
+        live.ThiefGuildRating = fetched.ThiefGuildRating;
+        live.ThiefGuildRatingCount = fetched.ThiefGuildRatingCount;
+        live.CampaignMissionCount = fetched.CampaignMissionCount;
+        live.Description = fetched.Description;
+        live.SequelOfTitle = fetched.SequelOfTitle;
+        live.SequelOfUrl = fetched.SequelOfUrl;
+        live.HasSequelTitle = fetched.HasSequelTitle;
+        live.HasSequelUrl = fetched.HasSequelUrl;
+        live.ThiefGuildMetadataVersion = fetched.ThiefGuildMetadataVersion;
+
+        if (string.IsNullOrWhiteSpace(live.Author))
+            live.Author = fetched.Author;
+        if (live.ReleaseYear is null)
+            live.ReleaseYear = fetched.ReleaseYear;
+        if (string.IsNullOrWhiteSpace(live.Tags))
+            live.Tags = fetched.Tags;
+
+        var assignedSeries = false;
+        if (live.SeriesId is null && !live.SeriesLookupChecked && fetched.SeriesId is not null)
+        {
+            live.SeriesId = fetched.SeriesId;
+            live.SeriesPosition = fetched.SeriesPosition;
+            assignedSeries = true;
+        }
+        live.SeriesLookupChecked |= fetched.SeriesLookupChecked;
+
+        return assignedSeries;
+    }
+
     private async Task ToggleSeriesExpandedAsync(SeriesHeaderRow? header)
     {
         header ??= SelectedRow as SeriesHeaderRow;

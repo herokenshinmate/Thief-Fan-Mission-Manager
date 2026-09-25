@@ -352,6 +352,20 @@ public class ThiefGuildPageParserTests
     }
 
     [Fact]
+    public async Task ExtractDescription_SkipsLdJsonBlocksWithoutDescription()
+    {
+        const string html = """
+            <html><head>
+            <script type="application/ld+json">{"@type":"BreadcrumbList"}</script>
+            <script type="application/ld+json">{"description": "Second block."}</script>
+            </head><body></body></html>
+            """;
+        var document = await ParseAsync(html);
+
+        Assert.Equal("Second block.", ThiefGuildPageParser.ExtractDescription(document));
+    }
+
+    [Fact]
     public async Task ExtractDescription_InvalidJson_ReturnsNull()
     {
         var document = await ParseAsync("""<html><head><script type="application/ld+json">{ not json</script></head><body></body></html>""");
@@ -398,7 +412,7 @@ public class ThiefGuildPageParserTests
         Assert.Equal(new[]
         {
             new ThiefGuildSeriesPartInfo(1, "The Book of Prophecy Part 1: Dead Letter Box", "https://www.thiefguild.com/fanmissions/2684/the-book-of-prophecy-part-1-dead-letter-box"),
-            new ThiefGuildSeriesPartInfo(2, "Some Mission", null),
+            new ThiefGuildSeriesPartInfo(2, "Some Mission", "https://www.thiefguild.com/fanmissions/2682/x"),
             new ThiefGuildSeriesPartInfo(3, "The Book of Prophecy Part 3: In the Lion's Den", "https://www.thiefguild.com/fanmissions/66450/the-book-of-prophecy-part-3-in-the-lions-den")
         }, result.Series!.Parts);
     }
@@ -411,5 +425,21 @@ public class ThiefGuildPageParserTests
         var series = ThiefGuildPageParser.ExtractSeries(document);
 
         Assert.Equal("TBOPP2THC", series!.Parts![1].Title);
+    }
+
+    [Fact]
+    public async Task LooksLikeMissionDetailPage_OnDetailPage_IsTrue()
+    {
+        var document = await ParseAsync(MetadataPage);
+
+        Assert.True(ThiefGuildPageParser.LooksLikeMissionDetailPage(document));
+    }
+
+    [Fact]
+    public async Task LooksLikeMissionDetailPage_OnMaintenancePage_IsFalse()
+    {
+        var document = await ParseAsync("<html><body><h1>Down for maintenance</h1></body></html>");
+
+        Assert.False(ThiefGuildPageParser.LooksLikeMissionDetailPage(document));
     }
 }

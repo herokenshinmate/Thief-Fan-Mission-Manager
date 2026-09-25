@@ -84,7 +84,8 @@ public class ThiefGuildBackfillServiceTests
         _lookup.Results["u1"] = Result("u1", rating: 9.02);
         var service = MakeService();
         var raised = 0;
-        service.MissionUpdated += (_, _) => raised++;
+        FanMission? updatedMission = null;
+        service.MissionUpdated += (_, fetched) => { raised++; updatedMission = fetched; };
 
         await service.RunAsync(null, CancellationToken.None);
 
@@ -93,6 +94,7 @@ public class ThiefGuildBackfillServiceTests
         Assert.Equal(1, mission.CampaignMissionCount);
         Assert.Equal(ThiefGuildMetadata.CurrentVersion, mission.ThiefGuildMetadataVersion);
         Assert.Equal(1, raised);
+        Assert.Same(mission, updatedMission);
     }
 
     [Fact]

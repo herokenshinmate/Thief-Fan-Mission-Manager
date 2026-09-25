@@ -32,7 +32,7 @@ public static class ThiefGuildPageParser
 
         return new ThiefGuildLookupResult(
             author, releaseYear, tags, url,
-            ExtractSeries(scope, string.IsNullOrWhiteSpace(currentTitle) ? null : currentTitle),
+            ExtractSeries(scope, string.IsNullOrWhiteSpace(currentTitle) ? null : currentTitle, url),
             rating, ratingCount,
             ExtractCampaignMissionCount(scope),
             ExtractDescription(scope),
@@ -114,26 +114,30 @@ public static class ThiefGuildPageParser
         return null;
     }
 
-    /// <summary>The page's schema.org JSON block carries the description as clean, unescaped text.</summary>
+    /// <summary>
+    /// The page's schema.org JSON block carries the description as clean, unescaped text. A page
+    /// can have several such blocks (e.g. a breadcrumb list before the mission's own); the first
+    /// one with a non-empty description wins.
+    /// </summary>
     public static string? ExtractDescription(IParentNode scope)
     {
-        var script = scope.QuerySelector("script[type='application/ld+json']");
-        if (script is null)
-            return null;
-
-        try
+        foreach (var script in scope.QuerySelectorAll("script[type='application/ld+json']"))
         {
-            using var json = JsonDocument.Parse(script.TextContent);
-            if (json.RootElement.ValueKind == JsonValueKind.Object
-                && json.RootElement.TryGetProperty("description", out var description)
-                && description.ValueKind == JsonValueKind.String)
+            try
             {
-                var text = description.GetString()?.Trim();
-                return string.IsNullOrEmpty(text) ? null : text;
+                using var json = JsonDocument.Parse(script.TextContent);
+                if (json.RootElement.ValueKind == JsonValueKind.Object
+                    && json.RootElement.TryGetProperty("description", out var description)
+                    && description.ValueKind == JsonValueKind.String)
+                {
+                    var text = description.GetString()?.Trim();
+                    if (!string.IsNullOrEmpty(text))
+                        return text;
+                }
             }
-        }
-        catch (JsonException)
-        {
+            catch (JsonException)
+            {
+            }
         }
 
         return null;
@@ -159,6 +163,16 @@ public static class ThiefGuildPageParser
         return null;
     }
 
+    /// <summary>
+    /// A maintenance page, error page or unrelated content loaded from a stored or guessed URL
+    /// shouldn't be mistaken for a mission's own page. True when the page has any landmark a real
+    /// mission detail page (or, for the rating count link, even a search card) would have.
+    /// </summary>
+    public static bool LooksLikeMissionDetailPage(IParentNode scope) =>
+        scope.QuerySelector("script[type='application/ld+json']") is not null
+        || scope.QuerySelector("a[href*='/fanmissions/rating_list/']") is not null
+        || scope.QuerySelectorAll("li.list-group-item").Any(item => NormalizeWhitespace(item.TextContent).StartsWith("Game:", StringComparison.OrdinalIgnoreCase));
+
     private static string NormalizeWhitespace(string text) => Regex.Replace(text, @"\s+", " ").Trim();
 
     private static string ToAbsoluteUrl(string href) =>
@@ -172,9 +186,12 @@ public static class ThiefGuildPageParser
     /// links, and the current mission as plain, unlinked text. The current mission's 1-based index in
     /// that list is its position. Search result cards have no such block. Anything not matching
     /// this shape (no series link, no or several unlinked entries) yields null rather than a guess.
-    /// Every entry is also returned as a part: other missions titled from their link's tooltip minus the trailing year, the current one titled <paramref name="currentTitle"/> (or its abbreviation when not given).
+    /// Every entry is also returned as a part: other missions titled from their link's tooltip minus
+    /// the trailing year, the current one titled <paramref name="currentTitle"/> (or its
+    /// abbreviation when not given) and linked to <paramref name="currentUrl"/> (the page's own URL)
+    /// instead of null, since it has one too.
     /// </summary>
-    public static ThiefGuildSeriesInfo? ExtractSeries(IParentNode scope, string? currentTitle = null)
+    public static ThiefGuildSeriesInfo? ExtractSeries(IParentNode scope, string? currentTitle = null, string? currentUrl = null)
     {
         var seriesLink = scope.QuerySelector("h6 a[href*='series=']");
         if (seriesLink?.ParentElement is not { } container)
@@ -224,7 +241,7 @@ public static class ThiefGuildPageParser
                 if (currentPosition is not null)
                     return null;
                 currentPosition = memberCount;
-                parts.Add(new ThiefGuildSeriesPartInfo(memberCount, currentTitle ?? node.TextContent.Trim(), null));
+                parts.Add(new ThiefGuildSeriesPartInfo(memberCount, currentTitle ?? node.TextContent.Trim(), currentUrl));
             }
         }
 

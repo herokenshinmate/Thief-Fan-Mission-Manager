@@ -27,6 +27,14 @@ public partial class MainWindow : FluentWindow
     private readonly ThiefGuildBackfillService _thiefGuildBackfillService;
     private readonly CancellationTokenSource _backfillCancellation = new();
     private DateTime _lastBackfillReload = DateTime.MinValue;
+
+    /// <summary>
+    /// A newly assigned series changes which rows exist (a header and its parts appear), so the
+    /// list is reloaded to show them; but rebuilding it resets scroll and focus, so while a run is
+    /// fetching a mission per second, do it at most every few seconds. The run's final reload
+    /// catches up anything still pending.
+    /// </summary>
+    private static readonly TimeSpan BackfillReloadThrottle = TimeSpan.FromSeconds(5);
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, SortField> _sortableColumns;
     private readonly Dictionary<System.Windows.Controls.GridViewColumn, string> _columnBaseHeaders;
 
@@ -111,11 +119,14 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private async void ThiefGuildBackfill_MissionUpdated(object? sender, EventArgs e)
+    private async void ThiefGuildBackfill_MissionUpdated(object? sender, FanMission fetched)
     {
-        // Rebuilding the list resets its scroll and focus, so while a run is fetching a mission per
-        // second, refresh at most every few seconds; the run's final reload catches up the rest.
-        if (DateTime.UtcNow - _lastBackfillReload < TimeSpan.FromSeconds(5))
+        // Patch the live copy so a later whole-row save doesn't write stale Thief Guild data back.
+        // Only a newly assigned series changes which rows exist, so only that case reloads the list.
+        if (!_viewModel.ApplyFetchedThiefGuildMetadata(fetched))
+            return;
+
+        if (DateTime.UtcNow - _lastBackfillReload < BackfillReloadThrottle)
             return;
         _lastBackfillReload = DateTime.UtcNow;
 
@@ -151,7 +162,7 @@ public partial class MainWindow : FluentWindow
         {
             Owner = this,
             Title = "Refresh Thief Guild Data",
-            Content = $"Re-fetch Thief Guild data for {linkedCount} linked mission(s)?\n\nThis takes about {linkedCount} second(s) and runs in the background.",
+            Content = $"Re-fetch Thief Guild data for {linkedCount} linked mission(s)?\n\nMissions are fetched one at a time, a second or two apart, so a large library can take several minutes. It runs in the background.",
             PrimaryButtonText = "Refresh",
             CloseButtonText = "Cancel"
         };
