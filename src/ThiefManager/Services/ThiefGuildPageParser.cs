@@ -37,7 +37,9 @@ public static class ThiefGuildPageParser
             ExtractCampaignMissionCount(scope),
             ExtractDescription(scope),
             ExtractSidebarLink(scope, "Sequel of:"),
-            ExtractSidebarLink(scope, "FM has a sequel:"));
+            ExtractSidebarLink(scope, "FM has a sequel:"),
+            ExtractNotes(scope),
+            ExtractRequiredNewDarkVersion(scopeText));
     }
 
     /// <summary>
@@ -119,13 +121,17 @@ public static class ThiefGuildPageParser
     /// can have several such blocks (e.g. a breadcrumb list before the mission's own); the first
     /// one with a non-empty description wins.
     /// </summary>
+    // Thief Guild's own JSON-LD template sometimes emits a trailing comma, which strict JSON
+    // rejects outright and would otherwise skip parsing the whole block.
+    private static readonly JsonDocumentOptions LenientJsonOptions = new() { AllowTrailingCommas = true };
+
     public static string? ExtractDescription(IParentNode scope)
     {
         foreach (var script in scope.QuerySelectorAll("script[type='application/ld+json']"))
         {
             try
             {
-                using var json = JsonDocument.Parse(script.TextContent);
+                using var json = JsonDocument.Parse(script.TextContent, LenientJsonOptions);
                 if (json.RootElement.ValueKind == JsonValueKind.Object
                     && json.RootElement.TryGetProperty("description", out var description)
                     && description.ValueKind == JsonValueKind.String)
@@ -141,6 +147,57 @@ public static class ThiefGuildPageParser
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The author's own notes (warnings, required NewDark version, recommended settings) sit in a
+    /// "NOTES:" callout box, as lines separated by &lt;br/&gt; after the "NOTES:" label - distinct
+    /// from the mission's story synopsis returned by <see cref="ExtractDescription"/>.
+    /// </summary>
+    public static string? ExtractNotes(IParentNode scope)
+    {
+        var label = scope.QuerySelectorAll("div.fmroundbox b > small")
+            .FirstOrDefault(el => NormalizeWhitespace(el.TextContent).Equals("NOTES:", StringComparison.OrdinalIgnoreCase));
+        if (label?.ParentElement?.ParentElement is not { } container)
+            return null;
+
+        var labelElement = label.ParentElement;
+        var sb = new System.Text.StringBuilder();
+        var pastLabel = false;
+        foreach (var node in container.ChildNodes)
+        {
+            if (!pastLabel)
+            {
+                pastLabel = node == labelElement;
+                continue;
+            }
+
+            if (node is IElement element && element.LocalName.Equals("br", StringComparison.OrdinalIgnoreCase))
+                sb.Append('\n');
+            else if (node.NodeType == NodeType.Text)
+                sb.Append(node.TextContent);
+        }
+
+        var lines = sb.ToString()
+            .Replace(' ', ' ')
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0);
+        var text = string.Join('\n', lines);
+        return text.Length > 0 ? text : null;
+    }
+
+    private static readonly Regex NewDarkVersionRegex = new(@"NewDark[^\d]{0,20}(\d+\.\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Thief Guild has no dedicated field for the required NewDark version; it's usually mentioned
+    /// in prose in the NOTES box (e.g. "NewDark 1.22 is required!"), so this is a best-effort scan
+    /// of the whole page's text rather than a reliable structured lookup.
+    /// </summary>
+    public static string? ExtractRequiredNewDarkVersion(string scopeText)
+    {
+        var match = NewDarkVersionRegex.Match(scopeText);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     /// <summary>

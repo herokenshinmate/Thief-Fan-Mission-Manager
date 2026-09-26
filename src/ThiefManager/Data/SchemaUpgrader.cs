@@ -68,6 +68,13 @@ public static class SchemaUpgrader
 
         AddColumnIfMissing(connection, "Settings", "Thief1Collapsed", "INTEGER NOT NULL DEFAULT 0");
         AddColumnIfMissing(connection, "Settings", "Thief2Collapsed", "INTEGER NOT NULL DEFAULT 0");
+
+        AddColumnIfMissing(connection, "FanMissions", "RequiredNewDarkVersion", "TEXT NULL");
+        AddColumnIfMissing(connection, "Settings", "Thief1NewDarkVersion", "TEXT NULL");
+        AddColumnIfMissing(connection, "Settings", "Thief2NewDarkVersion", "TEXT NULL");
+        AddColumnIfMissing(connection, "Settings", "ShowMissionBriefing", "INTEGER NOT NULL DEFAULT 1");
+        AddColumnIfMissing(connection, "Settings", "DoubleClickLaunchesPlay", "INTEGER NOT NULL DEFAULT 1");
+        AddColumnIfMissing(connection, "Settings", "WarnOnNewDarkVersionMismatch", "INTEGER NOT NULL DEFAULT 1");
     }
 
     private static void CreateTableIfMissing(SqliteConnection connection, string table, string createTableSql)

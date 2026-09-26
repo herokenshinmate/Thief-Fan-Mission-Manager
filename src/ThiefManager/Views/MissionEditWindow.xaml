@@ -177,9 +177,6 @@
                 </StackPanel>
                 <TextBlock Text="{Binding ThiefGuildSummary}" Foreground="{StaticResource MutedForegroundBrush}" Margin="0,0,0,4"
                            Visibility="{Binding ThiefGuildSummary, Converter={StaticResource NullToVisibilityConverter}}"/>
-                <TextBox Text="{Binding Description, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" MaxHeight="100" Margin="0,0,0,4"
-                         Visibility="{Binding Description, Converter={StaticResource NullToVisibilityConverter}}"/>
                 <StackPanel Visibility="{Binding ShowSequelLinks, Converter={StaticResource BoolToVisibilityConverter}}">
                     <TextBlock Visibility="{Binding SequelOf, Converter={StaticResource NullToVisibilityConverter}}">
                         <Run Text="Sequel of: "/><Hyperlink NavigateUri="{Binding SequelOf.Url}" RequestNavigate="Hyperlink_RequestNavigate"><Run Text="{Binding SequelOf.Title, Mode=OneWay}"/></Hyperlink>
@@ -189,11 +186,21 @@
                     </TextBlock>
                 </StackPanel>
             </StackPanel>
+
+            <StackPanel Visibility="{Binding Description, Converter={StaticResource NullToVisibilityConverter}}" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <ui:SymbolIcon Symbol="BookOpen24" Foreground="#FFBA68C8" Margin="0,0,6,0"/>
+                    <TextBlock Text="Mission Briefing"/>
+                </StackPanel>
+                <TextBox Text="{Binding Description, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" MaxHeight="100"/>
+            </StackPanel>
+
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <ui:SymbolIcon Symbol="Globe24" Foreground="#FF64B5F6" Margin="0,0,6,0"/>
                 <TextBlock Text="Thief Guild URL"/>
             </StackPanel>
-            <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, tags, series, rating and description. Leave blank and click Fetch to search by title instead."
+            <TextBlock Text="Paste this mission's Thief Guild page to fetch its author, release year, tags, notes, series, rating and briefing. Leave blank and click Fetch to search by title instead."
                        Foreground="{StaticResource MutedForegroundBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
             <DockPanel Margin="0,0,0,4">
                 <ui:Button DockPanel.Dock="Right" Content="Fetch Metadata" Command="{Binding FetchThiefGuildMetadataCommand}" Padding="14,6" Margin="8,0,0,0">

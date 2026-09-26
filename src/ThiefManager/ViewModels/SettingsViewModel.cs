@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ThiefManager.Data;
 using ThiefManager.Models;
+using ThiefManager.Services;
 
 namespace ThiefManager.ViewModels;
 
@@ -27,6 +28,16 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? thief2ExePath;
     [ObservableProperty] private string? thief1DownloadsFolder;
     [ObservableProperty] private string? thief2DownloadsFolder;
+    [ObservableProperty] private string? thief1NewDarkVersion;
+    [ObservableProperty] private string? thief2NewDarkVersion;
+    [ObservableProperty] private string? thief1DetectedNewDarkVersion;
+    [ObservableProperty] private string? thief2DetectedNewDarkVersion;
+    [ObservableProperty] private bool showMissionBriefing = true;
+    [ObservableProperty] private bool doubleClickLaunchesPlay = true;
+    [ObservableProperty] private bool warnOnNewDarkVersionMismatch = true;
+
+    partial void OnThief1ExePathChanged(string? value) => Thief1DetectedNewDarkVersion = NewDarkVersionDetector.TryDetect(value);
+    partial void OnThief2ExePathChanged(string? value) => Thief2DetectedNewDarkVersion = NewDarkVersionDetector.TryDetect(value);
 
     private async Task LoadAsync()
     {
@@ -37,6 +48,11 @@ public partial class SettingsViewModel : ObservableObject
         Thief2ExePath = settings.Thief2ExePath;
         Thief1DownloadsFolder = settings.Thief1DownloadsFolder;
         Thief2DownloadsFolder = settings.Thief2DownloadsFolder;
+        Thief1NewDarkVersion = settings.Thief1NewDarkVersion;
+        Thief2NewDarkVersion = settings.Thief2NewDarkVersion;
+        ShowMissionBriefing = settings.ShowMissionBriefing;
+        DoubleClickLaunchesPlay = settings.DoubleClickLaunchesPlay;
+        WarnOnNewDarkVersionMismatch = settings.WarnOnNewDarkVersionMismatch;
     }
 
     private async Task SaveAsync()
@@ -48,7 +64,12 @@ public partial class SettingsViewModel : ObservableObject
             Thief1ExePath = Thief1ExePath,
             Thief2ExePath = Thief2ExePath,
             Thief1DownloadsFolder = Thief1DownloadsFolder,
-            Thief2DownloadsFolder = Thief2DownloadsFolder
+            Thief2DownloadsFolder = Thief2DownloadsFolder,
+            Thief1NewDarkVersion = Thief1NewDarkVersion,
+            Thief2NewDarkVersion = Thief2NewDarkVersion,
+            ShowMissionBriefing = ShowMissionBriefing,
+            DoubleClickLaunchesPlay = DoubleClickLaunchesPlay,
+            WarnOnNewDarkVersionMismatch = WarnOnNewDarkVersionMismatch
         });
 
         Saved?.Invoke(this, EventArgs.Empty);

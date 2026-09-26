@@ -10,7 +10,8 @@ public class ThiefGuildMetadataApplierTests
         "skacky", 2014, "City, Rain", "https://www.thiefguild.com/fanmissions/2535/endless-rain",
         Rating: 9.02, RatingCount: 229, CampaignMissionCount: 1, Description: "A rainy night.",
         SequelOf: new ThiefGuildLink("Between These Dark Walls", "https://www.thiefguild.com/works/a"),
-        HasSequel: new ThiefGuildLink("The Chalice of Souls", "https://www.thiefguild.com/works/b"));
+        HasSequel: new ThiefGuildLink("The Chalice of Souls", "https://www.thiefguild.com/works/b"),
+        Notes: "- NewDark 1.22 is required!", RequiredNewDarkVersion: "1.22");
 
     [Fact]
     public void Apply_CopiesThiefGuildFieldsAndStampsVersion()
@@ -19,6 +20,8 @@ public class ThiefGuildMetadataApplierTests
 
         ThiefGuildMetadataApplier.Apply(mission, FullResult());
 
+        Assert.Equal("- NewDark 1.22 is required!", mission.Notes);
+        Assert.Equal("1.22", mission.RequiredNewDarkVersion);
         Assert.Equal(9.02, mission.ThiefGuildRating);
         Assert.Equal(229, mission.ThiefGuildRatingCount);
         Assert.Equal(1, mission.CampaignMissionCount);
@@ -45,6 +48,7 @@ public class ThiefGuildMetadataApplierTests
         Assert.Null(mission.Description);
         Assert.Null(mission.SequelOfTitle);
         Assert.Null(mission.HasSequelUrl);
+        Assert.Null(mission.RequiredNewDarkVersion);
     }
 
     [Fact]
@@ -57,5 +61,25 @@ public class ThiefGuildMetadataApplierTests
         Assert.Equal("Me", mission.Author);
         Assert.Equal(2000, mission.ReleaseYear);
         Assert.Equal("City, Rain", mission.Tags);
+    }
+
+    [Fact]
+    public void Apply_DoesNotOverwriteExistingPersonalNotes()
+    {
+        var mission = new FanMission { Notes = "My own review notes." };
+
+        ThiefGuildMetadataApplier.Apply(mission, FullResult());
+
+        Assert.Equal("My own review notes.", mission.Notes);
+    }
+
+    [Fact]
+    public void Apply_FillsBlankNotesFromThiefGuild()
+    {
+        var mission = new FanMission { Notes = "" };
+
+        ThiefGuildMetadataApplier.Apply(mission, FullResult());
+
+        Assert.Equal("- NewDark 1.22 is required!", mission.Notes);
     }
 }

@@ -7,6 +7,18 @@ public static class ChangelogData
     /// <summary>Most recent version first.</summary>
     public static IReadOnlyList<ChangelogEntry> Entries { get; } = new List<ChangelogEntry>
     {
+        new("3.9.9", "2026-09-26", new[]
+        {
+            "Fixed missions installed from Downloads with a long name failing to launch: install folder names are now kept to 30 characters, stripping spaces first and truncating if still too long.",
+            "Fixed Thief Guild lookups missing FMs whose local name has no spaces/underscores between words or ends with a version tag (e.g. \"_v2\").",
+            "Properties now show a Mission Briefing section (the mission's story synopsis from Thief Guild), and the author's Thief Guild notes (warnings, recommended settings, required NewDark version) fill in your personal Notes field when it's blank.",
+            "Fixed the Mission Briefing sometimes coming back empty: Thief Guild's page data isn't always strict JSON, so a stray trailing comma could silently block the whole briefing from loading.",
+            "Added a NewDark Version field to Settings for each game: auto-detected from the configured executable where possible (labeled as a guess), with a manual override you can type in yourself.",
+            "Clicking Play now shows a bigger, resizable Mission Briefing window first (the story synopsis and any Thief Guild notes) when a mission has one, with a chance to cancel; turn this off in Settings.",
+            "Settings is now organized into FM Folders, NewDark Versions, and General tabs.",
+            "Added a General setting for whether double-clicking a mission plays it (the new default) or opens its Properties.",
+            "Added a warning before playing a mission whose Thief Guild-listed required NewDark version is newer than the version configured for that game; turn this off in General settings."
+        }),
         new("3.9.8", "2026-09-26", new[]
         {
             "No functional changes; this release verifies that automatic updates work end-to-end."

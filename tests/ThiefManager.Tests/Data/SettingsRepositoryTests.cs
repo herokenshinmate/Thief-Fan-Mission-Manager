@@ -41,6 +41,90 @@ public class SettingsRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_ThenGetAsync_RoundTripsManualNewDarkVersions()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.Thief1NewDarkVersion = "1.27";
+        settings.Thief2NewDarkVersion = "1.26";
+
+        await repo.SaveAsync(settings);
+        var reloaded = await repo.GetAsync();
+
+        Assert.Equal("1.27", reloaded.Thief1NewDarkVersion);
+        Assert.Equal("1.26", reloaded.Thief2NewDarkVersion);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithNoSavedSettings_DefaultsShowMissionBriefingToTrue()
+    {
+        var repo = new SettingsRepository(CreateContext);
+
+        var settings = await repo.GetAsync();
+
+        Assert.True(settings.ShowMissionBriefing);
+    }
+
+    [Fact]
+    public async Task SaveAsync_ThenGetAsync_RoundTripsShowMissionBriefing()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.ShowMissionBriefing = false;
+
+        await repo.SaveAsync(settings);
+        var reloaded = await repo.GetAsync();
+
+        Assert.False(reloaded.ShowMissionBriefing);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithNoSavedSettings_DefaultsDoubleClickLaunchesPlayToTrue()
+    {
+        var repo = new SettingsRepository(CreateContext);
+
+        var settings = await repo.GetAsync();
+
+        Assert.True(settings.DoubleClickLaunchesPlay);
+    }
+
+    [Fact]
+    public async Task SaveAsync_ThenGetAsync_RoundTripsDoubleClickLaunchesPlay()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.DoubleClickLaunchesPlay = false;
+
+        await repo.SaveAsync(settings);
+        var reloaded = await repo.GetAsync();
+
+        Assert.False(reloaded.DoubleClickLaunchesPlay);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithNoSavedSettings_DefaultsWarnOnNewDarkVersionMismatchToTrue()
+    {
+        var repo = new SettingsRepository(CreateContext);
+
+        var settings = await repo.GetAsync();
+
+        Assert.True(settings.WarnOnNewDarkVersionMismatch);
+    }
+
+    [Fact]
+    public async Task SaveAsync_ThenGetAsync_RoundTripsWarnOnNewDarkVersionMismatch()
+    {
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.WarnOnNewDarkVersionMismatch = false;
+
+        await repo.SaveAsync(settings);
+        var reloaded = await repo.GetAsync();
+
+        Assert.False(reloaded.WarnOnNewDarkVersionMismatch);
+    }
+
+    [Fact]
     public async Task SaveAsync_TwiceInARow_PersistsDownloadsFoldersOnTheUpdatePath()
     {
         var repo = new SettingsRepository(CreateContext);

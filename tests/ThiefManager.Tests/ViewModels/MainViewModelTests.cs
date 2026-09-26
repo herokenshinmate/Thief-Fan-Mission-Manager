@@ -9,8 +9,8 @@ namespace ThiefManager.Tests.ViewModels;
 
 public class MainViewModelTests
 {
-    private static LaunchService MakeLaunchService(bool exeExists) =>
-        new(new RecordingProcessLauncher(), new StubFileExistsChecker(exeExists));
+    private static LaunchService MakeLaunchService(bool exeExists, RecordingProcessLauncher? launcher = null) =>
+        new(launcher ?? new RecordingProcessLauncher(), new StubFileExistsChecker(exeExists));
 
     private class RecordingProcessLauncher : IProcessLauncher
     {
@@ -67,8 +67,9 @@ public class MainViewModelTests
         RecordingFolderDeleter? folderDeleter = null,
         FakeSeriesRepository? seriesRepo = null,
         FakeSettingsRepository? settingsRepo = null,
-        FakeUpdateService? updateService = null) =>
-        new(repo, MakeLaunchService(exeExists), archiveInstaller ?? new RecordingArchiveInstaller(),
+        FakeUpdateService? updateService = null,
+        RecordingProcessLauncher? processLauncher = null) =>
+        new(repo, MakeLaunchService(exeExists, processLauncher), archiveInstaller ?? new RecordingArchiveInstaller(),
             folderDeleter ?? new RecordingFolderDeleter(), seriesRepo ?? new FakeSeriesRepository(repo),
             settingsRepo ?? new FakeSettingsRepository(), updateService ?? new FakeUpdateService { IsInstalled = false });
 
@@ -143,6 +144,184 @@ public class MainViewModelTests
         vm.LaunchSelectedCommand.Execute(null);
 
         Assert.False(string.IsNullOrEmpty(vm.LaunchError));
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithBriefingContent_RaisesBriefingRequestedInsteadOfLaunching()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", Description = "A story." });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        MissionLaunchPrompt? requested = null;
+        vm.BriefingRequested += (_, prompt) => requested = prompt;
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.Same(vm.SelectedMission, requested?.Mission);
+        Assert.Null(requested?.VersionWarning);
+        Assert.Null(launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithNotesButNoDescription_StillRaisesBriefingRequested()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", Notes = "NewDark 1.22 required." });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        var raised = false;
+        vm.BriefingRequested += (_, _) => raised = true;
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.True(raised);
+        Assert.Null(launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithOlderLocalNewDarkVersion_RaisesBriefingRequestedWithWarning()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", RequiredNewDarkVersion = "1.27" });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        vm.ConfigureNewDarkVersions("1.22", null);
+        MissionLaunchPrompt? requested = null;
+        vm.BriefingRequested += (_, prompt) => requested = prompt;
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.NotNull(requested?.VersionWarning);
+        Assert.Contains("1.27", requested!.VersionWarning);
+        Assert.Contains("1.22", requested.VersionWarning);
+        Assert.Null(launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithVersionMismatchButWarningDisabled_LaunchesDirectly()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", RequiredNewDarkVersion = "1.27" });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        vm.ConfigureNewDarkVersions("1.22", null);
+        vm.ConfigureWarnOnNewDarkVersionMismatch(false);
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.Equal(@"C:\Thief.exe", launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithLocalVersionAtLeastAsNewAsRequired_LaunchesDirectly()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", RequiredNewDarkVersion = "1.27" });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        vm.ConfigureNewDarkVersions("1.27", null);
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.Equal(@"C:\Thief.exe", launcher.LastStartedPath);
+    }
+
+    [Theory]
+    [InlineData(null, "1.22", null)]
+    [InlineData("1.27", null, null)]
+    [InlineData("not-a-version", "1.22", null)]
+    [InlineData("1.27", "not-a-version", null)]
+    [InlineData("1.27", "1.22", "This mission may need NewDark 1.27, but your configured version is 1.22. It might not work correctly.")]
+    [InlineData("1.27", "1.27", null)]
+    [InlineData("1.27", "1.28", null)]
+    public void BuildVersionWarning_ComparesRequiredAgainstLocalVersion(string? required, string? local, string? expected)
+    {
+        var mission = new FanMission { Title = "M", FolderPath = "p", RequiredNewDarkVersion = required };
+
+        Assert.Equal(expected, MainViewModel.BuildVersionWarning(mission, local));
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithNoBriefingContent_LaunchesDirectly()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1" });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.Equal(@"C:\Thief.exe", launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchSelectedCommand_WithBriefingContentButShowMissionBriefingDisabled_LaunchesDirectly()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", Notes = "Warning." });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+        vm.ConfigureShowMissionBriefing(false);
+
+        vm.LaunchSelectedCommand.Execute(null);
+
+        Assert.Equal(@"C:\Thief.exe", launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public async Task LaunchConfirmed_LaunchesTheSelectedMission()
+    {
+        var repo = new FakeMissionRepository();
+        await repo.AddAsync(new FanMission { Title = "Mission", Game = GameTitle.Thief1, FolderPath = "p1", Description = "A story." });
+        var launcher = new RecordingProcessLauncher();
+        var vm = MakeViewModel(repo, processLauncher: launcher);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectedMission = vm.VisibleMissions.Single();
+        vm.ConfigureExePaths(@"C:\Thief.exe", null);
+
+        vm.LaunchConfirmed();
+
+        Assert.Equal(@"C:\Thief.exe", launcher.LastStartedPath);
+    }
+
+    [Fact]
+    public void DoubleClickLaunchesPlay_DefaultsToTrue()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        Assert.True(vm.DoubleClickLaunchesPlay);
+    }
+
+    [Fact]
+    public void ConfigureDoubleClickLaunchesPlay_UpdatesTheProperty()
+    {
+        var vm = MakeViewModel(new FakeMissionRepository());
+
+        vm.ConfigureDoubleClickLaunchesPlay(false);
+
+        Assert.False(vm.DoubleClickLaunchesPlay);
     }
 
     [Fact]

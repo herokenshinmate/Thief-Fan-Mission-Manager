@@ -26,16 +26,20 @@ of setup, cataloging, and everyday use.**
   the parts you don't own yet appear as dimmed placeholders with a link to
   their Thief Guild page.
 - **Thief Guild integration**: installing a mission looks up its author,
-  release year, tags, community rating, and description automatically.
-  Refresh ratings for everything at once from the menu.
+  release year, tags, community rating, story briefing, and the author's
+  own notes (warnings, recommended settings, required NewDark version)
+  automatically. Refresh everything at once from the menu.
 - **Scan for new missions** in your configured FM and Downloads folders —
   the app recognizes an archive as already installed even if its filename
   differs slightly (casing, version tags, bracketed notes), and lets you
   ignore folders you never want to see again.
 - **Install straight from Downloads**: pick an archive (zip/7z/rar) and the
   app extracts it into the right game's FM folder for you.
-- **Launch** a mission directly from the list — the Play button jumps
-  straight into the mission instead of opening the loader's own picker.
+- **Launch** a mission directly from the list — the Play button (or a
+  double-click, configurable) jumps straight into the mission instead of
+  opening the loader's own picker. If it has a briefing/notes, or the
+  configured NewDark version looks too old for it, you'll see a window
+  first with a chance to cancel.
 - **Self-updating**: new versions download in the background and a
   "Restart to update" link appears when one's ready. See Help > Changelog
   for what changed, or Check for Updates in About.

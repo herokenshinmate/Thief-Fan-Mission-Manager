@@ -25,6 +25,7 @@ public partial class MissionEditViewModel : ObservableObject
     private double? _thiefGuildRating;
     private int? _thiefGuildRatingCount;
     private int? _campaignMissionCount;
+    private string? _requiredNewDarkVersion;
     private int _thiefGuildMetadataVersion;
     private ThiefGuildSeriesInfo? _lastFetchedSeries;
     private string? _originalThiefGuildUrl;
@@ -111,6 +112,8 @@ public partial class MissionEditViewModel : ObservableObject
             parts.Add("Single mission");
         else if (_campaignMissionCount is int missions && missions > 1)
             parts.Add($"Campaign of {missions} missions");
+        if (!string.IsNullOrWhiteSpace(_requiredNewDarkVersion))
+            parts.Add($"Requires NewDark {_requiredNewDarkVersion}");
         ThiefGuildSummary = parts.Count == 0 ? null : string.Join(" · ", parts);
     }
 
@@ -157,6 +160,7 @@ public partial class MissionEditViewModel : ObservableObject
         _thiefGuildRating = mission.ThiefGuildRating;
         _thiefGuildRatingCount = mission.ThiefGuildRatingCount;
         _campaignMissionCount = mission.CampaignMissionCount;
+        _requiredNewDarkVersion = mission.RequiredNewDarkVersion;
         _thiefGuildMetadataVersion = mission.ThiefGuildMetadataVersion;
         Description = mission.Description;
         SequelOf = LinkOrNull(mission.SequelOfTitle, mission.SequelOfUrl);
@@ -184,6 +188,8 @@ public partial class MissionEditViewModel : ObservableObject
             ReleaseYear = result.ReleaseYear;
         if (!string.IsNullOrWhiteSpace(result.Tags))
             Tags = result.Tags;
+        if (string.IsNullOrWhiteSpace(Notes))
+            Notes = result.Notes;
         ThiefGuildUrl = result.Url;
         _fetchedThiefGuildDataThisSession = true;
         _thiefGuildLookupDismissed = false;
@@ -191,6 +197,7 @@ public partial class MissionEditViewModel : ObservableObject
         _thiefGuildRating = result.Rating;
         _thiefGuildRatingCount = result.RatingCount;
         _campaignMissionCount = result.CampaignMissionCount;
+        _requiredNewDarkVersion = result.RequiredNewDarkVersion;
         _thiefGuildMetadataVersion = ThiefGuildMetadata.CurrentVersion;
         _lastFetchedSeries = result.Series;
         Description = result.Description;
@@ -229,6 +236,7 @@ public partial class MissionEditViewModel : ObservableObject
             _thiefGuildRating = null;
             _thiefGuildRatingCount = null;
             _campaignMissionCount = null;
+            _requiredNewDarkVersion = null;
             Description = null;
             SequelOf = null;
             HasSequel = null;
@@ -263,7 +271,8 @@ public partial class MissionEditViewModel : ObservableObject
             SequelOfUrl = SequelOf?.Url,
             HasSequelTitle = HasSequel?.Title,
             HasSequelUrl = HasSequel?.Url,
-            ThiefGuildMetadataVersion = _thiefGuildMetadataVersion
+            ThiefGuildMetadataVersion = _thiefGuildMetadataVersion,
+            RequiredNewDarkVersion = _requiredNewDarkVersion
         };
 
         MissionStatusDates.Apply(mission, Status, DateTime.Now);

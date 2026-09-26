@@ -366,6 +366,21 @@ public class ThiefGuildPageParserTests
     }
 
     [Fact]
+    public async Task ExtractDescription_LdJsonWithTrailingComma_StillParses()
+    {
+        // Thief Guild's own template sometimes emits a trailing comma before a closing brace,
+        // which strict JSON parsing rejects outright.
+        const string html = """
+            <html><head>
+            <script type="application/ld+json">{"@type": "CreativeWork", "description": "A rainy night.", "isAccessibleForFree": true,}</script>
+            </head><body></body></html>
+            """;
+        var document = await ParseAsync(html);
+
+        Assert.Equal("A rainy night.", ThiefGuildPageParser.ExtractDescription(document));
+    }
+
+    [Fact]
     public async Task ExtractDescription_InvalidJson_ReturnsNull()
     {
         var document = await ParseAsync("""<html><head><script type="application/ld+json">{ not json</script></head><body></body></html>""");
@@ -425,6 +440,45 @@ public class ThiefGuildPageParserTests
         var series = ThiefGuildPageParser.ExtractSeries(document);
 
         Assert.Equal("TBOPP2THC", series!.Parts![1].Title);
+    }
+
+    [Fact]
+    public async Task ExtractNotes_ReadsLinesAfterTheNotesLabel()
+    {
+        const string html = """
+            <div class="row well fmroundbox text-justify" style="background-color: rgba(70, 69, 69, 0.85)">
+                <small>
+                    <i class="text-muted material-icons">info</i>
+                    <b><small>NOTES:</small></b>
+                    &nbsp; &nbsp;
+                    - NewDark 1.22 is required! Use FMSel to play rather than DarkLoader.<br />- Enable Weather and Fogging, it's half of the mission!
+                </small>
+            </div>
+            """;
+        var document = await ParseAsync(html);
+
+        var notes = ThiefGuildPageParser.ExtractNotes(document);
+
+        Assert.Equal(
+            "- NewDark 1.22 is required! Use FMSel to play rather than DarkLoader.\n- Enable Weather and Fogging, it's half of the mission!",
+            notes);
+    }
+
+    [Fact]
+    public async Task ExtractNotes_WithNoNotesBox_ReturnsNull()
+    {
+        var document = await ParseAsync("<html><body><p>No notes here.</p></body></html>");
+
+        Assert.Null(ThiefGuildPageParser.ExtractNotes(document));
+    }
+
+    [Theory]
+    [InlineData("- NewDark 1.22 is required! Use FMSel to play rather than DarkLoader.", "1.22")]
+    [InlineData("Requires NewDark v1.27 or higher.", "1.27")]
+    [InlineData("No version mentioned here.", null)]
+    public void ExtractRequiredNewDarkVersion_FindsAVersionMentionedNearNewDark(string text, string? expected)
+    {
+        Assert.Equal(expected, ThiefGuildPageParser.ExtractRequiredNewDarkVersion(text));
     }
 
     [Fact]

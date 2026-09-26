@@ -63,6 +63,10 @@ public partial class App : Application
         }
 
         mainViewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
+        mainViewModel.ConfigureShowMissionBriefing(settings.ShowMissionBriefing);
+        mainViewModel.ConfigureDoubleClickLaunchesPlay(settings.DoubleClickLaunchesPlay);
+        mainViewModel.ConfigureNewDarkVersions(settings.Thief1NewDarkVersion, settings.Thief2NewDarkVersion);
+        mainViewModel.ConfigureWarnOnNewDarkVersionMismatch(settings.WarnOnNewDarkVersionMismatch);
         GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
 
         var mainWindow = new MainWindow(mainViewModel, missionRepository, settingsRepository, launchService, directoryReader, archiveFileReader, thiefGuildLookupService, ignoredFmRepository, seriesRepository, thiefGuildBackfillService);

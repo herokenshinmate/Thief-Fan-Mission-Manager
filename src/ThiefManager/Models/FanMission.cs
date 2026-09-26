@@ -30,4 +30,5 @@ public class FanMission
     public string? HasSequelTitle { get; set; }
     public string? HasSequelUrl { get; set; }
     public int ThiefGuildMetadataVersion { get; set; }
+    public string? RequiredNewDarkVersion { get; set; }
 }
