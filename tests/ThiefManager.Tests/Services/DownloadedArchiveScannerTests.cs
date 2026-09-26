@@ -41,6 +41,35 @@ public class DownloadedArchiveScannerTests
     }
 
     [Fact]
+    public void FindNewArchives_StripsSpacesFromTargetFolderNameWhenTooLong()
+    {
+        var baseName = "A Mission With A Very Long And Rather Wordy Title";
+        var archives = new[] { $@"C:\Downloads\{baseName}.zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(archives, @"C:\fms", Array.Empty<string>());
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(baseName, candidate.SuggestedTitle);
+        var folderName = Path.GetFileName(candidate.TargetFolderPath);
+        Assert.True(folderName.Length <= 30, $"Expected folder name '{folderName}' to be 30 characters or fewer.");
+        Assert.DoesNotContain(' ', folderName);
+    }
+
+    [Fact]
+    public void FindNewArchives_TruncatesTargetFolderNameTo30CharsWhenStillTooLongAfterStrippingSpaces()
+    {
+        var baseName = new string('a', 45);
+        var archives = new[] { $@"C:\Downloads\{baseName}.zip" };
+
+        var result = DownloadedArchiveScanner.FindNewArchives(archives, @"C:\fms", Array.Empty<string>());
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(baseName, candidate.SuggestedTitle);
+        var folderName = Path.GetFileName(candidate.TargetFolderPath);
+        Assert.Equal(baseName[..30], folderName);
+    }
+
+    [Fact]
     public void FindNewArchives_ExcludesArchivesMatchingAnAlreadyInstalledNameDespiteDifferentSpelling()
     {
         var archives = new[] { @"C:\Downloads\A_New_Job_v2.zip" };

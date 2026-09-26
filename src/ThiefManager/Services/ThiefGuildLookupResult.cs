@@ -11,4 +11,6 @@ public record ThiefGuildLookupResult(
     int? CampaignMissionCount = null,
     string? Description = null,
     ThiefGuildLink? SequelOf = null,
-    ThiefGuildLink? HasSequel = null);
+    ThiefGuildLink? HasSequel = null,
+    string? Notes = null,
+    string? RequiredNewDarkVersion = null);

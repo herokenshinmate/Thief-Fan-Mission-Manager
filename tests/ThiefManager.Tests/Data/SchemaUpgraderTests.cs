@@ -117,6 +117,109 @@ public class SchemaUpgraderTests : IDisposable
         Assert.True((await repo.GetAsync()).Thief1Collapsed);
     }
 
+    [Fact]
+    public async Task EnsureColumns_OnPreNewDarkVersionDatabase_AddsRequiredNewDarkVersionColumn()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """ALTER TABLE "FanMissions" DROP COLUMN "RequiredNewDarkVersion";""";
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var missionRepo = new MissionRepository(CreateContext);
+        await missionRepo.AddAsync(new FanMission { Title = "M", FolderPath = "m", RequiredNewDarkVersion = "1.27" });
+        var mission = Assert.Single(await missionRepo.GetAllAsync());
+        Assert.Equal("1.27", mission.RequiredNewDarkVersion);
+    }
+
+    [Fact]
+    public async Task EnsureColumns_OnPreNewDarkVersionDatabase_AddsManualNewDarkVersionColumns()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                ALTER TABLE "Settings" DROP COLUMN "Thief1NewDarkVersion";
+                ALTER TABLE "Settings" DROP COLUMN "Thief2NewDarkVersion";
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var repo = new SettingsRepository(CreateContext);
+        var settings = await repo.GetAsync();
+        settings.Thief1NewDarkVersion = "1.27";
+        await repo.SaveAsync(settings);
+        Assert.Equal("1.27", (await repo.GetAsync()).Thief1NewDarkVersion);
+    }
+
+    [Fact]
+    public async Task EnsureColumns_OnPreBriefingDatabase_AddsShowMissionBriefingDefaultingToTrue()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """ALTER TABLE "Settings" DROP COLUMN "ShowMissionBriefing";""";
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var repo = new SettingsRepository(CreateContext);
+        Assert.True((await repo.GetAsync()).ShowMissionBriefing);
+    }
+
+    [Fact]
+    public async Task EnsureColumns_OnPreDoubleClickSettingDatabase_AddsDoubleClickLaunchesPlayDefaultingToTrue()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """ALTER TABLE "Settings" DROP COLUMN "DoubleClickLaunchesPlay";""";
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var repo = new SettingsRepository(CreateContext);
+        Assert.True((await repo.GetAsync()).DoubleClickLaunchesPlay);
+    }
+
+    [Fact]
+    public async Task EnsureColumns_OnPreVersionWarningSettingDatabase_AddsWarnOnNewDarkVersionMismatchDefaultingToTrue()
+    {
+        using (var db = CreateContext())
+            db.Database.EnsureCreated();
+        using (var connection = new SqliteConnection($"Data Source={_dbPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """ALTER TABLE "Settings" DROP COLUMN "WarnOnNewDarkVersionMismatch";""";
+            command.ExecuteNonQuery();
+        }
+
+        SchemaUpgrader.EnsureColumns(_dbPath);
+
+        var repo = new SettingsRepository(CreateContext);
+        Assert.True((await repo.GetAsync()).WarnOnNewDarkVersionMismatch);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

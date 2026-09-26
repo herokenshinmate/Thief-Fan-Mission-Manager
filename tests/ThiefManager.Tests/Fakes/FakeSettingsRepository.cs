@@ -17,7 +17,12 @@ public class FakeSettingsRepository : ISettingsRepository
         Thief1DownloadsFolder = _settings.Thief1DownloadsFolder,
         Thief2DownloadsFolder = _settings.Thief2DownloadsFolder,
         Thief1Collapsed = _settings.Thief1Collapsed,
-        Thief2Collapsed = _settings.Thief2Collapsed
+        Thief2Collapsed = _settings.Thief2Collapsed,
+        Thief1NewDarkVersion = _settings.Thief1NewDarkVersion,
+        Thief2NewDarkVersion = _settings.Thief2NewDarkVersion,
+        ShowMissionBriefing = _settings.ShowMissionBriefing,
+        DoubleClickLaunchesPlay = _settings.DoubleClickLaunchesPlay,
+        WarnOnNewDarkVersionMismatch = _settings.WarnOnNewDarkVersionMismatch
     });
 
     public Task SaveAsync(AppSettings settings)
@@ -28,6 +33,11 @@ public class FakeSettingsRepository : ISettingsRepository
         _settings.Thief2ExePath = settings.Thief2ExePath;
         _settings.Thief1DownloadsFolder = settings.Thief1DownloadsFolder;
         _settings.Thief2DownloadsFolder = settings.Thief2DownloadsFolder;
+        _settings.Thief1NewDarkVersion = settings.Thief1NewDarkVersion;
+        _settings.Thief2NewDarkVersion = settings.Thief2NewDarkVersion;
+        _settings.ShowMissionBriefing = settings.ShowMissionBriefing;
+        _settings.DoubleClickLaunchesPlay = settings.DoubleClickLaunchesPlay;
+        _settings.WarnOnNewDarkVersionMismatch = settings.WarnOnNewDarkVersionMismatch;
         return Task.CompletedTask;
     }
 

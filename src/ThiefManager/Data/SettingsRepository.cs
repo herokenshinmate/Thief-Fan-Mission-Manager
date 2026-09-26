@@ -34,6 +34,11 @@ public class SettingsRepository : ISettingsRepository
             existing.Thief2ExePath = settings.Thief2ExePath;
             existing.Thief1DownloadsFolder = settings.Thief1DownloadsFolder;
             existing.Thief2DownloadsFolder = settings.Thief2DownloadsFolder;
+            existing.Thief1NewDarkVersion = settings.Thief1NewDarkVersion;
+            existing.Thief2NewDarkVersion = settings.Thief2NewDarkVersion;
+            existing.ShowMissionBriefing = settings.ShowMissionBriefing;
+            existing.DoubleClickLaunchesPlay = settings.DoubleClickLaunchesPlay;
+            existing.WarnOnNewDarkVersionMismatch = settings.WarnOnNewDarkVersionMismatch;
         }
         await db.SaveChangesAsync();
     }

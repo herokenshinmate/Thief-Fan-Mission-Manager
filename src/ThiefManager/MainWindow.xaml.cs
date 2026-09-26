@@ -76,6 +76,7 @@ public partial class MainWindow : FluentWindow
         };
         _columnBaseHeaders = _sortableColumns.Keys.ToDictionary(c => c, c => c.Header?.ToString() ?? string.Empty);
         _viewModel.PropertyChanged += MainViewModel_PropertyChanged;
+        _viewModel.BriefingRequested += OnBriefingRequested;
 
         Loaded += async (_, _) =>
         {
@@ -331,9 +332,20 @@ public partial class MainWindow : FluentWindow
         }
 
         if (_viewModel.SelectedRow is SeriesHeaderRow)
+        {
             await _viewModel.ToggleSeriesExpandedCommand.ExecuteAsync(null);
+            return;
+        }
+
+        if (_viewModel.DoubleClickLaunchesPlay)
+        {
+            if (_viewModel.LaunchSelectedCommand.CanExecute(null))
+                _viewModel.LaunchSelectedCommand.Execute(null);
+        }
         else
+        {
             await OpenPropertiesForSelectedMissionAsync();
+        }
     }
 
     private async void MissionProperties_Click(object sender, RoutedEventArgs e) =>
@@ -385,6 +397,10 @@ public partial class MainWindow : FluentWindow
         {
             var settings = await _settingsRepository.GetAsync();
             _viewModel.ConfigureExePaths(settings.Thief1ExePath, settings.Thief2ExePath);
+            _viewModel.ConfigureShowMissionBriefing(settings.ShowMissionBriefing);
+            _viewModel.ConfigureDoubleClickLaunchesPlay(settings.DoubleClickLaunchesPlay);
+            _viewModel.ConfigureNewDarkVersions(settings.Thief1NewDarkVersion, settings.Thief2NewDarkVersion);
+            _viewModel.ConfigureWarnOnNewDarkVersionMismatch(settings.WarnOnNewDarkVersionMismatch);
             Services.GameIconStore.UpdatePaths(settings.Thief1ExePath, settings.Thief2ExePath);
             _viewModel.RefreshGameIcons();
             await _viewModel.LoadCommand.ExecuteAsync(null);
@@ -507,6 +523,13 @@ public partial class MainWindow : FluentWindow
             await OpenPropertiesForAsync(mission);
         else
             await _viewModel.DismissThiefGuildLookupAsync(mission);
+    }
+
+    private void OnBriefingRequested(object? sender, MissionLaunchPrompt prompt)
+    {
+        var briefingWindow = new BriefingWindow(prompt.Mission, prompt.VersionWarning) { Owner = this };
+        if (briefingWindow.ShowDialog() == true)
+            _viewModel.LaunchConfirmed();
     }
 
     private async void DeleteMission_Click(object sender, RoutedEventArgs e)

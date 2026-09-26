@@ -11,4 +11,9 @@ public class AppSettings
     public string? Thief2DownloadsFolder { get; set; }
     public bool Thief1Collapsed { get; set; }
     public bool Thief2Collapsed { get; set; }
+    public string? Thief1NewDarkVersion { get; set; }
+    public string? Thief2NewDarkVersion { get; set; }
+    public bool ShowMissionBriefing { get; set; } = true;
+    public bool DoubleClickLaunchesPlay { get; set; } = true;
+    public bool WarnOnNewDarkVersionMismatch { get; set; } = true;
 }

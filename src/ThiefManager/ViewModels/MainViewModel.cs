@@ -403,7 +403,47 @@ public partial class MainViewModel : ObservableObject
             ?? rows.FirstOrDefault(r => selectedMissionGame is GameTitle g0 && _collapsedGames.Contains(g0) && r is GameHeaderRow g2 && g2.Game == g0);
     }
 
+    /// <summary>Raised instead of launching when the selected mission has briefing/notes text to
+    /// show first, or a NewDark version mismatch to warn about; the view shows it and calls
+    /// <see cref="LaunchConfirmed"/> if the user proceeds.</summary>
+    public event EventHandler<MissionLaunchPrompt>? BriefingRequested;
+
     private void LaunchSelected()
+    {
+        if (SelectedMission is null)
+            return;
+
+        var hasBriefingContent = !string.IsNullOrWhiteSpace(SelectedMission.Description)
+            || !string.IsNullOrWhiteSpace(SelectedMission.Notes);
+        var localNewDarkVersion = SelectedMission.Game == GameTitle.Thief1 ? _thief1NewDarkVersion : _thief2NewDarkVersion;
+        var versionWarning = _warnOnNewDarkVersionMismatch ? BuildVersionWarning(SelectedMission, localNewDarkVersion) : null;
+
+        if ((_showMissionBriefing && hasBriefingContent) || versionWarning is not null)
+        {
+            BriefingRequested?.Invoke(this, new MissionLaunchPrompt(SelectedMission, versionWarning));
+            return;
+        }
+
+        LaunchConfirmed();
+    }
+
+    /// <summary>Null unless the mission names a required NewDark version, a local version is
+    /// configured for its game, both parse as real versions, and the local one is older.</summary>
+    public static string? BuildVersionWarning(FanMission mission, string? localNewDarkVersion)
+    {
+        if (string.IsNullOrWhiteSpace(mission.RequiredNewDarkVersion) || string.IsNullOrWhiteSpace(localNewDarkVersion))
+            return null;
+        if (!Version.TryParse(mission.RequiredNewDarkVersion, out var required))
+            return null;
+        if (!Version.TryParse(localNewDarkVersion, out var local))
+            return null;
+        if (local >= required)
+            return null;
+
+        return $"This mission may need NewDark {mission.RequiredNewDarkVersion}, but your configured version is {localNewDarkVersion}. It might not work correctly.";
+    }
+
+    public void LaunchConfirmed()
     {
         if (SelectedMission is null)
             return;
@@ -416,12 +456,29 @@ public partial class MainViewModel : ObservableObject
 
     private string? _thief1ExePath;
     private string? _thief2ExePath;
+    private string? _thief1NewDarkVersion;
+    private string? _thief2NewDarkVersion;
+    private bool _showMissionBriefing = true;
+    private bool _warnOnNewDarkVersionMismatch = true;
+    public bool DoubleClickLaunchesPlay { get; private set; } = true;
 
     public void ConfigureExePaths(string? thief1ExePath, string? thief2ExePath)
     {
         _thief1ExePath = thief1ExePath;
         _thief2ExePath = thief2ExePath;
     }
+
+    public void ConfigureNewDarkVersions(string? thief1NewDarkVersion, string? thief2NewDarkVersion)
+    {
+        _thief1NewDarkVersion = thief1NewDarkVersion;
+        _thief2NewDarkVersion = thief2NewDarkVersion;
+    }
+
+    public void ConfigureShowMissionBriefing(bool showMissionBriefing) => _showMissionBriefing = showMissionBriefing;
+
+    public void ConfigureWarnOnNewDarkVersionMismatch(bool warnOnNewDarkVersionMismatch) => _warnOnNewDarkVersionMismatch = warnOnNewDarkVersionMismatch;
+
+    public void ConfigureDoubleClickLaunchesPlay(bool doubleClickLaunchesPlay) => DoubleClickLaunchesPlay = doubleClickLaunchesPlay;
 
     private async Task DeleteSelectedAsync()
     {
